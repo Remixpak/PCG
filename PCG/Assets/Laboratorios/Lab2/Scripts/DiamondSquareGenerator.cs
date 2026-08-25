@@ -126,10 +126,32 @@ public static class DiamondSquareGenerator
         heights[resolution - 1, resolution - 1] = (float)random.NextDouble();
 
         int stepSize = resolution - 1;
+        //stepSize representa el tamaño de las regiones que se están procesando durante una iteración.
         float currentRoughness = roughness;
 
         while (stepSize > 1)
         {
+            //# declaramos las funciones de diamod step 
+            //height: matriz bidimensional que hace de mapa de alturas del terreno (basicamente la topografia)
+            //setpsize: es el numero que define el paso o distancia entre dos puntos en la iteracion y que se va reduciendo en cada ciclo y que dicta el detalle 
+            //currentRoughness: determina la fuerza/magnitud de la perturbacion aleatoria para calcular las alturas, esta se multiplica por el decay en cada iteracion para ir disminuyendo y se encarga de formar cordilleras
+            //roughnessDecay: es basicamente el suavizado del terreno a medida que el algoritmo agrega detalle mas pequeños
+
+
+            // # basicamente el algoritmo funciona de forma en que el diamond step se encarga de tomar un cuadrado de la matriz unidimensional y y calculamos el centro de este mediante los vertices del cuadrado dando saltos
+            // donde luego de calcular el punto de equilibrio utiliando los 4 vertices del cuadrado se genera una perturbacion aleatoria(hacia arriba/abajo) para elevar o hundir ese cuadrado y generar un "monte"
+            //se guarda la altura generado de ese cuadrado para asegurarse que este normalizado ([0,1])
+            //luego la funcion de square step se encarga de tomar ese cuadrado de la matriz y crea un patron como un tablero de ajedrez donde recorre cada esquina para verificar si hay espacios que rellenar
+            //al realizar el calculo este hace saltos mas o menos grandes dejando 4 cuadrantes dentro del cuadrado como si fuera una cruz donde los saltos se encargan si este espacio a rellenar esta cerca de un borde
+            //si esta cerca de un borde no lo considera para no salirse del mapa, luego de calcular la  cruz se le agrega cierta imperfeccion al monte creado para hacerlo mas realista y se guarda la altura final
+
+
+            DiamondStep(heights, stepSize, currentRoughness, random); // Ejecutar DiamondStep usando los parametros: heights, stepSize, currentRoughness y random.
+            SquareStep(heights, stepSize, currentRoughness, random); // Ejecutar SquareStep usando los mismos parametros: heights, stepSize, currentRoughness y random.
+
+            stepSize /= 2; // Reducir stepSize a la mitad
+            currentRoughness *= roughnessDecay; // Reducir currentRoughness utilizando roughnessDecay
+
             // TODO: PROCESO ITERATIVO
             //
             // 1. Ejecutar DiamondStep utilizando:
@@ -138,9 +160,6 @@ public static class DiamondSquareGenerator
             // 2. Ejecutar SquareStep utilizando los mismos parámetros.
             //
             // Después de ambos pasos se cambia a una escala menor.
-
-            stepSize /= 2;
-            currentRoughness *= roughnessDecay;
         }
 
         return heights;
@@ -236,6 +255,8 @@ public static class DiamondSquareGenerator
     // Finalmente, la nueva altura debe mantenerse en el rango [0,1].
     //
     private static void DiamondStep(
+        //la funcion principal del diamondstep es buscar los centros vacios de los cuadrados y le asigna una altura basandose en sus esquinas
+
         float[,] heights,
         int stepSize,
         float roughness,
@@ -244,6 +265,23 @@ public static class DiamondSquareGenerator
         int resolution = heights.GetLength(0);
         int halfStep = stepSize / 2;
 
+
+        //damos saltos usando halfstep para ubicarnos en el centro de cada cuadrado
+        for(int y = halfStep; y< resolution; y += stepSize) // recorremos las filas separadas por stepSize, comenzando en halfStep
+        {
+            for(int x= halfStep; x < resolution; x += stepSize) //recorremos las columnas separadas por stepSize, comenzando en halfStep
+            {
+                //estando en el centro de los cuadrdados hacemos una suma de las 4 esquinas de este
+                float sum = heights[y- halfStep, x- halfStep] + //esquina superior iszquierda
+                            heights[y- halfStep, x+ halfStep] +// esquina superior derecha
+                            heights[y+ halfStep, x- halfStep] +//esquina inferio izquierda
+                            heights[y+ halfStep, x+ halfStep];//esquina inferior derecha
+
+                float average = sum / 4.0f; //calculamos el equilibrio que seria el promedio de las 4 esquina del cuadrado
+                float offset = RandomOffset(random, roughness); //generamos perturbacion aleatoria para elevar o hundir ese cuadrado 
+                heights[y, x] = Mathf.Clamp(average + offset, 0f, 1f);//guardamos la nueva altura en el punto central, manteniéndola en el rango [0,1]
+            }
+        }
         // TODO: DIAMOND STEP
         //
         // 1. Recorrer los centros de cada cuadrado.
@@ -377,6 +415,8 @@ public static class DiamondSquareGenerator
     // Finalmente, cada nueva altura debe mantenerse en [0,1].
     //
     private static void SquareStep(
+        //la funcion principal del squarestep es la de rellenar los huecos generados en el mapa que quedaron en el medio de los lados dandoles cierta estructura 
+
         float[,] heights,
         int stepSize,
         float roughness,
@@ -384,6 +424,68 @@ public static class DiamondSquareGenerator
     {
         int resolution = heights.GetLength(0);
         int halfStep = stepSize / 2;
+
+        // recorremos el mapa de arriba a abajo en pasos cortos mediante el halfstep
+        for(int y=0; y < resolution; y += halfStep)
+        {
+
+            //se crea un patron como un tablero de ajedrez en el cuadrados del diamond step y empezamos pegados a los bordes desde las filas
+            //y en otras nos desplazamos medio paso para rellenar los huecos de los lados de los cuadrados del diamond step
+            int StartX = (y % stepSize == 0) ? halfStep : 0;//comenzamos desplazandonos medio paso y si no desde 0 
+
+
+            //avanzamos de izqueirda a derecha dando pasos largos para evitar pisar lo ya calculado
+            for (int x = StartX; x < resolution; x += stepSize)
+            {
+                float sum = 0f; // inicializamos la suma de los vecinos a 0
+                int neighbours = 0; // inicializamos el contador de vecinos válidos a 0
+
+                // en lugar de mirarse como diagonal se crea una cruz en el cuadrado 
+                //pero como como algunos puntos estan en la orilla del mapa se comprueba si existen vecinos validos para no salirse de la matriz
+
+
+                // calculamos si seguimos dentro del mapa desde la izquierda
+                if (x - halfStep >= 0)
+                {
+                    sum += heights[y, x - halfStep];
+                    neighbours++;
+                }
+
+                // calculamos si seguimos dentro del mapa desde la derecha
+                if (x + halfStep < resolution)
+                {
+                    sum += heights[y, x + halfStep];
+                    neighbours++;
+                }
+
+                // calculamos si seguimos dentro del mapa desde arriba
+                if (y- halfStep >= 0)
+                {
+                    sum += heights[y - halfStep, x];
+                    neighbours++;
+                }
+                // calculamos si seguimos dentro del mapa desde abajo
+                if (y + halfStep < resolution)
+                {
+                    sum += heights[y + halfStep, x];
+                    neighbours++;
+                }
+
+
+                //calculamos el punto de equilibrio con los vecinos que encontramos
+                //normalmente serian 4(por la cruz) pero si estamos en un borde solo se encuentran 3
+                float average = sum / neighbours;
+
+                //le agregamos un grado de imperfeccion al "cerro" que se genera bajandolo o subiendolo un poco
+                float offset = RandomOffset(random, roughness);
+
+                //guardamos la altura final normalizada para asegurarnos que nunca se pase de 1 o baje de 0
+                heights[y, x] = Mathf.Clamp(average + offset, 0f, 1f);
+
+            }
+        }
+
+
 
         // TODO: SQUARE STEP
         //

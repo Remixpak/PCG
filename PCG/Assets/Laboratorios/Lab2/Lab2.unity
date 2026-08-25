@@ -275,7 +275,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 708a631c0da30e945a3958e4f9415057, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainGenerator
-  generationMethod: 2
+  generationMethod: 3
   autoUpdate: 1
   terrainWidth: 100
   terrainLength: 100
@@ -286,8 +286,8 @@ MonoBehaviour:
   perlinFrequency: 7.9
   perlinInterpolation: 2
   diamondIterations: 7
-  diamondRoughness: 0.4
-  diamondRoughnessDecay: 0.5
+  diamondRoughness: 1
+  diamondRoughnessDecay: 0.639
   paintByHeight: 1
   lowThreshold: 0.39
   highThreshold: 0.659

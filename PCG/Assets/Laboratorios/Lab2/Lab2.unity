@@ -275,22 +275,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 708a631c0da30e945a3958e4f9415057, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainGenerator
-  generationMethod: 1
+  generationMethod: 2
   autoUpdate: 1
   terrainWidth: 100
   terrainLength: 100
-  heightmapResolution: 129
+  heightmapResolution: 513
   seed: 12345
   valueNoiseInterpolation: 2
   latticeSpacing: 4
-  perlinFrequency: 4
+  perlinFrequency: 7.9
   perlinInterpolation: 2
   diamondIterations: 7
   diamondRoughness: 0.4
   diamondRoughnessDecay: 0.5
   paintByHeight: 1
-  lowThreshold: 0.35
-  highThreshold: 0.7
+  lowThreshold: 0.39
+  highThreshold: 0.659
   lowColor: {r: 0.25, g: 0.55, b: 0.2, a: 1}
   middleColor: {r: 0.45, g: 0.3, b: 0.15, a: 1}
   highColor: {r: 0.8, g: 0.8, b: 0.8, a: 1}

@@ -22,7 +22,7 @@ public static class PerlinNoiseGenerator
         new Vector2(-1f, 1f).normalized,
         new Vector2(1f, -1f).normalized,
         new Vector2(-1f, -1f).normalized
-    };
+    };//vectores de direccion (8 direcciones)
 
     // -------------------------------------------------------------------------
     // GENERACIÓN DEL HEIGHTMAP
@@ -72,9 +72,9 @@ public static class PerlinNoiseGenerator
                 float normalizedX = x / (float)(resolution - 1);
                 float normalizedY = y / (float)(resolution - 1);
 
-                float sampleX = normalizedX * frequency;
+                float sampleX = normalizedX * frequency;//basicamente la frecuencia es cuantos puntos del mapa se van a considerar
                 float sampleY = normalizedY * frequency;
-
+                //es decir si pesco 2 puntos habra pocas montañas y valles amplios
                 float noise = GetNoiseValue(
                     sampleX,
                     sampleY,
@@ -344,21 +344,63 @@ public static class PerlinNoiseGenerator
         int seed,
         HeightmapGenerator.InterpolationMode interpolationMode)
     {
+        /*
+        explicacion general 
+        el algoritmo recorre la grilla toma un punto, lo normaliza y multiplica por la frecuencia para saber que tanto tiene que moverse
+        una vez se mueve se crea el punto P (el x e y que se pasan por parametros)
+        obtiene las 4 esquinas las literales 4 esquinas
+        y para cada esquina tira un vector(gradiente) que define cosas distintas segun la direccion
+        si el vector apunta al punto P es un valor positivo por lo que crea altura (montaña)
+        si el vector es contrario al punto P punto negativo una endidura o un hoyo
+        y si es al lado del punto P lo mantiene plano
+        pero estos vectores proponen nomas la altura de los puntos y todo se define con los pesos
+        los pesos se definen por que tan cerca esta el punto P de la esquina en cuestion, mientras mas cerca mas toma en consideracion la propuesta de ese vector
+        es decir si el punto de arriba a la izq propone montaña y el de arriba a la derecha un hoyo y el punto P esta mas a la izq entonces la montaña es mas pronunciada que el hoyo
+        luego se interpola todo para que se vea bonito (esta bonito)
+        */
         // TODO: PERLIN / GRADIENT NOISE 2D
         //
         // Para cada posición (x, y):
         //
         // 1. Identificar las cuatro esquinas enteras de la celda.
+        int x0 = Mathf.FloorToInt(x);
+        int y0 = Mathf.FloorToInt(y);
+        int x1 = x0 + 1;
+        int y1 = y0 + 1;
+        //se usa el FloorToInt para obtener un punto especifico y descartar decimales
         // 2. Calcular localX y localY.
+        float localX = x - x0;
+        float localY = y - y0;
+        //que tan lejos esta el punto P de cada una de las esquinas
         // 3. Obtener el gradiente correspondiente a cada esquina.
+        // (x0, y0) -> Superior Izquierda | (x1, y0) -> Superior Derecha
+        // (x0, y1) -> Inferior Izquierda | (x1, y1) -> Inferior Derecha
+        Vector2 g00 = GetGradient(x0, y0, seed);
+        Vector2 g10 = GetGradient(x1, y0, seed);
+        Vector2 g01 = GetGradient(x0, y1, seed);
+        Vector2 g11 = GetGradient(x1, y1, seed);
+        //que direccion de rampa le toca a cada esquina segun la semilla
         // 4. Crear los cuatro vectores de desplazamiento.
+        Vector2 d00 = new Vector2(localX, localY);
+        Vector2 d10 = new Vector2(localX - 1f, localY);
+        Vector2 d01 = new Vector2(localX, localY - 1f);
+        Vector2 d11 = new Vector2(localX - 1f, localY - 1f);
+        //vectores desde la esquina hacia el punto P
         // 5. Calcular el producto punto para cada esquina.
         // 6. Obtener weightX y weightY según el modo de interpolación.
         // 7. Interpolar horizontalmente los dos resultados superiores.
         // 8. Interpolar horizontalmente los dos resultados inferiores.
+        float dot00 = Vector2.Dot(g00, d00); // Arriba izq
+        float dot10 = Vector2.Dot(g10, d10); // Arriba der
+        float dot01 = Vector2.Dot(g01, d01); // Abajo izq
+        float dot11 = Vector2.Dot(g11, d11); // Abajo der
+        //producto punto (que tan alta es la rampa)
         // 9. Interpolar verticalmente ambos resultados.
+        float wx = HeightmapGenerator.GetInterpolationWeight(localX, interpolationMode);
+        float wy = HeightmapGenerator.GetInterpolationWeight(localY, interpolationMode);
         // 10. Retornar el valor obtenido.
-        //
+        float top = HeightmapGenerator.LinearInterpolation(dot00, dot10, wx);
+        float bottom = HeightmapGenerator.LinearInterpolation(dot01, dot11, wx);
         // Puede reutilizar:
         //
         //      GetGradient(...)
@@ -366,7 +408,7 @@ public static class PerlinNoiseGenerator
         //      HeightmapGenerator.GetInterpolationWeight(...)
         //      HeightmapGenerator.LinearInterpolation(...)
 
-        return 0f;
+        return HeightmapGenerator.LinearInterpolation(top, bottom, wy);
     }
 
     // -------------------------------------------------------------------------

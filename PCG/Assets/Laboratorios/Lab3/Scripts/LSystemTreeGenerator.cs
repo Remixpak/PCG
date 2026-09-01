@@ -389,6 +389,109 @@ public class LSystemTreeGenerator : MonoBehaviour
         //
         // Considerar que posición y orientación deben recuperarse juntas
         // al retornar desde una rama.
+
+        //# Implementamos el metodo de ejecucion
+
+        // # F: La tortuga avanza desde la direccion actual y dibuja un segmento
+        // # f: la trotuga avanza la misma distancia pero sin dibujar(no genera segmento)
+        // # +: rotamos la tortuga hacia la izquierda
+        // # -: la tortuga rota hacia la derecha
+        // # [: entra en la cola el estado de la tortuga
+        // #  ] : sacamos(se recupera) el estado de la torgua con sus movimientos 
+
+        // # para 3d
+        // #(pitch) & : rotamos la tortuga hacia abajo en modo 3D
+        // #(pitch)^: rotamos la tortuga hacia arriba en modo 3D
+        // # (roll) \\: rotamos la tortuga hacia la izquierda en modo 3D
+        // # (roll) //: rotamos la tortuga hacia la derecha en modo 3D
+
+
+
+        Vector3 currentPosition = Vector3.zero; // Posición inicial de la tortuga
+        Quaternion currentRotation = Quaternion.identity; // Orientación inicial de la tortuga
+        Stack<TurtleState> stateStack = new Stack<TurtleState>(); //pila donde almacenamos el estado de la tortuga(que accion hizo)
+
+        foreach (char symbol in sequence)
+        {
+            if (symbol == 'F') //si el el simbolo de la secuencia es F, la tortuga avanza 10 pixeles desde la direccion actual y dibuja un segmento
+            {
+                Vector3 nextPosition = currentPosition + (currentRotation * Vector3.up * segmentLength); // calculamos su siguiente posicion mediante la posicion actual, la rotacion y la longitud del segmento
+                CreateBranch(currentPosition, nextPosition);//creamos el segmento entre la posicion actual y la siguiente
+                currentPosition = nextPosition;//actualizamos la posicion actual de la tortuga a la siguiente
+            }
+
+            else if (symbol == 'f')
+            {
+                currentPosition += currentRotation * Vector3.up * segmentLength; //la tortuga avanza la misma distancia pero sin dibujar mediante la posicion actual, la rotacion y la longitud del segmento
+            }
+
+            else if (symbol == '+')
+            {
+                //# si cambiamos el vector3. por algunos de estos angulos:
+                // Vector3.up: aumenta hacia arriba
+                // vector3.down: aumenta hacia abajo
+                // vector 3.left: aumenta hacia la izquierda
+                // Vector3.right: aumenta hacia la derecha
+                // vector3.forward: aumenta hacia adelante
+                //vector3.back: aumenta hacia atras
+                //vector3.zero: no aumenta hacia ningun lado
+                //vector3.one: aumenta hacia todos los lados
+
+                //debido al twod y como estamos en un plano 2d al utilizar rigth y rigth en + y - al momento de avanzar la tortuga esta contrapone ambos angulos por lo que las ramas quedan al mismo lado, por eso
+                //si usamos forward en ambos crece para ambos lados
+                currentRotation = currentRotation * Quaternion.AngleAxis(activeAngle, Vector3.forward);//calculamos la nueva rotacion de la tortuga hacia la izquierda mediante el angulo activo y el eje Y
+            }
+
+            else if (symbol == '-')
+            {
+
+
+                currentRotation = currentRotation * Quaternion.AngleAxis(-activeAngle, Vector3.forward);//calculamos la nueva rotacion de la tortuga hacia la derecha mediante el angulo activo y el eje y
+            }
+
+            else if (symbol == '[')
+            {
+                stateStack.Push(new TurtleState(currentPosition, currentRotation)); //guardarmos el estado actual de la tortuga en la pila 
+            }
+            else if (symbol == ']') //si el simbolo de la secuenecia es ], se recupera el estado de la tortuga desde la pila 
+            {
+                if (stateStack.Count > 0)//si la pila tiene elementos, se recupera el estado de la tortuga desde la pila y se actualiza la posicion y rotacion actual de la tortuga
+                {
+                    TurtleState state = stateStack.Pop();//se recuperar(se saca) el estado de la tortuga de la pila
+                    currentPosition = state.position;//la posicion actual de la tortuga se actualiza con la posicion del estado recuperado
+                    currentRotation = state.rotation;//la rotacion actual de la tortuga se actualiza con la rotacion del estado recuperado
+                }
+            }
+            else if (symbol == '&')// si el simbolo de la secuencia es &, se realiza una rotacion hacia abajo de la tortuga en modo 3D
+            {
+                if (generationMode == GenerationMode.ThreeD) // si el modo de generacion es 3D, se calcula la nueva rotacion de la tortuga hacia abajo mediante el angulo activo y el eje X
+                {
+                    currentRotation = currentRotation * Quaternion.AngleAxis(activeAngle, Vector3.right); // calculamos la rotacion actual de la tortuga hacia abajo mediante el angulo activo y el eje X
+                }
+            }
+            else if (symbol == '^') // si el simbolo de la secuencia es ^, se realiza una rotacion hacia arriba de la tortuga en modo 3D
+            {
+                if (generationMode == GenerationMode.ThreeD)// si el modo de generacion es 3D, se calcula la nueva rotacion de la tortuga hacia arriba mediante el angulo activo y el eje X
+                {
+                    currentRotation = currentRotation * Quaternion.AngleAxis(-activeAngle, Vector3.right);//calculamos la rotacion actual mediante el angulo activo y el eje X hacia arriba
+                }
+            }
+            else if (symbol == '\\') // si el simbolo de la secuencia es \\, se realiza una rotacion hacia la izquierda de la tortuga en modo 3D
+            {
+                if (generationMode == GenerationMode.ThreeD)// si el modo de generacion es 3D, se calcula la nueva rotacion de la tortuga hacia la izquierda mediante el angulo activo y el eje Z
+                {
+                    currentRotation = currentRotation * Quaternion.AngleAxis(activeAngle, Vector3.forward);// calculamos la rotacion actual de la tortuga hacia la izquierda mediante el angulo activo y el eje Z
+                }
+            }
+            else if (symbol == '/')// si el simbolo de la secuencia es /, se realiza una rotacion hacia la derecha de la tortuga en modo 3D
+            {
+                if (generationMode == GenerationMode.ThreeD)// si el modo de generacion es 3D, se calcula la nueva rotacion de la tortuga hacia la derecha mediante el angulo activo y el eje Z
+                {
+                    currentRotation = currentRotation * Quaternion.AngleAxis(-activeAngle, Vector3.forward);// calculamos la rotacion actual de la tortuga hacia la derecha mediante el angulo activo y el eje Z
+                }
+            }
+
+        }
     }
 
 

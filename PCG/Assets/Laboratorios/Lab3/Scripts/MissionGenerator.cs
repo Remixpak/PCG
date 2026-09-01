@@ -206,6 +206,87 @@ public class MissionGenerator : MonoBehaviour
         //      - misión interpretada
         //
         // El resultado debe ser reproducible utilizando la misma seed.
+
+        // Establecer la seed
+        UnityEngine.Random.InitState(seed);
+
+        // Crear la misión
+        String mission = "";
+        
+        // Lista que almacena a cada una de las derivaciones
+        List<string> missionHistory = new List<string>();
+
+        // Asignar el símbolo inicial
+        mission += startSymbol;
+        missionHistory.Add(mission); // Añadir simbolo inicial a la lista de derivaciones
+
+        // Aplicar la producción inicial
+        if (mission.Contains(startSymbol))
+        {
+            mission = mission.Replace(startSymbol, startProduction);
+            missionHistory.Add(mission); // Añadir la producción inicial a la lista de derivaciones
+        }
+
+        // Realizar las expansiones secuenciales
+        for (int i = 0; i < expansionSteps; i++)
+        {
+            // Buscar la primera tarea pendiente
+            int taskIndex = mission.IndexOf(taskSymbol);
+            if (taskIndex != -1)
+            {
+                // Seleccionar una producción aleatoria de taskProductions
+                int productionIndex = UnityEngine.Random.Range(0, taskProductions.Count);
+                string selectedProduction = taskProductions[productionIndex];
+                // Reemplazar la tarea pendiente con la producción seleccionada
+                mission = mission.Remove(taskIndex, 1).Insert(taskIndex, selectedProduction);
+            }
+            missionHistory.Add(mission); // Añadir la derivación a la lista de derivaciones
+        }
+
+        //Finalizar los símbolos taskSymbol restantes con terminalProduction
+        if(mission.Contains(taskSymbol))
+        {
+            mission = mission.Replace(taskSymbol, terminalProduction);
+            missionHistory.Add(mission); // Añadir la derivación final a la lista de derivaciones
+        }
+
+        // Print en consola
+        StringBuilder output = new StringBuilder();
+        output.Append("===== MISSION GENERATOR =====");
+        output.AppendLine();
+
+        // Reglas
+        output.AppendLine("RULES:");
+        foreach (string production in taskProductions)
+        {
+            output.AppendLine($"T -> {production}");
+        }
+        output.AppendLine();
+
+        // Derivación de la gramática
+        output.AppendLine("DERIVATION:");
+        foreach(string derivation in missionHistory)
+        {
+            output.AppendLine(derivation);
+        }
+        output.AppendLine();
+
+        // Interpretar la cadena final de las misiones
+        output.AppendLine("MISSION INTERPRETATION:");
+        for (int i = 0; i < mission.Length; i++)
+        {
+            char symbol = mission[i];
+            string description = GetDescription(symbol);
+            if (description != null)
+            {
+                output.AppendLine($"Paso {i}: {symbol} - {description}");
+                
+            }
+        }
+
+        Debug.Log(output);
+
+
     }
 
 

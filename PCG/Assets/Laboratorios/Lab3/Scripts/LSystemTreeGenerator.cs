@@ -390,6 +390,25 @@ public class LSystemTreeGenerator : MonoBehaviour
         // Considerar que posición y orientación deben recuperarse juntas
         // al retornar desde una rama.
 
+
+
+        /*
+        explicacion basica: tomamos como override el metodo de axiomas del parallelgrammar para interpretar cadenas de letras por lo que al momento de integrarla dentro de esta funcion podemos asignarle cualquier axioma
+        en este caso F y otras variedades para realizar diferentes acciones que la tortuga hara.
+
+        la tortuga dentro del modo 2d puede avanzar hacia adelante, guardar su estados y sacarlos de la pila y girar de forma iterativa por lo que al terminar una iteracion este la repite el proceso y aumenta la
+        transformacion paralela de los axiomas para generar la vegatacion de forma mas detallada, adicionalmente se puede incorporar dentro del calculo de los vectores diferentes angulos para terner diversos
+        resultados, pero al ser en 2d se limita a un plano, por lo que al momento de girar hacia la izquierda y derecha la tortuga genera ramas en el mismo lado, por lo que al utilizar forward en ambos lados genera ramas hacia ambos lados.
+
+        la tortuga dentro del modo 3d puede realizar las mismas acciones que en 2d pero ademas peude girar hacia arriba, hacia abajo y hacia los lados
+        por lo que al momento de generar la vegetacion esta puede crecer hacia todos los lados y no solo en un plano, por lo que se puede generar una vegetacion mas realista y con mayor detalle.
+        
+        la logica detras de esto es que al momento de generar la vegetacion utiliza diferentes axiomas para seguir la orden en la iteracion,
+        calcula la posicicion y la rotacion de la tortuga y genera un segmento entre la posicion actual y la siguiente utilizando la funcion de createbranch y diversos calculos matematicos para ver
+        su nueva ubicacion.
+
+
+        */
         //# Implementamos el metodo de ejecucion
 
         // # F: La tortuga avanza desde la direccion actual y dibuja un segmento

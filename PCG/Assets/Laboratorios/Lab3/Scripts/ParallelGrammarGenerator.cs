@@ -139,23 +139,90 @@ public class ParallelGrammarGenerator : MonoBehaviour
     // 
 
     public static string Generate(
-        string axiom,
-        List<LSystemRule> rules,
-        int iterations,
+        string axiom,//cadena de partida
+        List<LSystemRule> rules,//reglas de intercambios dada por la gramatica
+        int iterations,//numero de veces que se ejecuta el remplazo paralelo
         List<string> derivation = null)
     {
+
         // TODO: EXPANSIÓN PARALELA
-        // 
+        /*
+        Diccionario solo para optimizacion ya que si no se implementa la ejecucion seria caleta mas lento
+        recorre todas las reglas de la gramatica y las guarda, por ejemplo:
+        clave: A -> valor: AB de ese modo busca la letra que debe cambiar y la reemplaza por la cadena correspondiente
+        */
+        Dictionary<char, string> ruleDictionary = new Dictionary<char, string>();
+
+        if (rules != null)
+        {
+            foreach (LSystemRule rule in rules)
+            {
+                if (rule != null && !string.IsNullOrEmpty(rule.predecessor))
+                {
+                    //usamos el primer carácter del predecesor como clave de búsqueda
+                    char key = rule.predecessor[0];
+                    if (!ruleDictionary.ContainsKey(key))
+                    {
+                        ruleDictionary.Add(key, rule.successor ?? "");
+                    }
+                }
+            }
+        }
         // Implementar la expansión de la gramática considerando
         // 
         // 1. Comenzar desde el axioma.
-        // 2. Aplicar las reglas durante la cantidad indicada de iteraciones.
-        // 3. Evaluar todos los símbolos de cada iteración de forma paralela.
-        // 4. Utilizar la regla correspondiente cuando exista.
-        // 5. Mantener sin cambios los símbolos que no posean una regla.
-        // 6. Registrar el resultado de cada iteración en derivation.
-        // 7. Retornar la cadena obtenida al finalizar.
+        string current = axiom ?? "";
 
+        if (derivation != null)
+        {
+            derivation.Add(current);
+            /*
+            La derivacion es basicamente como cambia la cadena a traves de la iteraciones 
+            como es una lista de strings le pasa el current (osea la cadena actual en la iteracion en turno) en cada iteracion
+            */
+        }
+        // 2. Aplicar las reglas durante la cantidad indicada de iteraciones.
+        for (int i = 0; i < iterations; i++)
+        {
+            
+            StringBuilder next = new StringBuilder();
+
+            // 3. Evaluar todos los símbolos de cada iteración de forma paralela.
+            foreach (char symbol in current)
+            {
+                /*
+                lee de la cadena current de la iteración actual sin modificarla.
+                Todo se va acumulando en una nueva instancia next (StringBuilder). 
+                Esto asegura que ninguna sustitución parcial afecte a otros símbolos dentro de la misma iteración.
+                */
+                // 4. Utilizar la regla correspondiente cuando exista.
+                if (ruleDictionary.TryGetValue(symbol, out string replacement))
+                {
+                    
+                    next.Append(replacement);
+                }
+                else// 5. Mantener sin cambios los símbolos que no posean una regla.
+                {
+                    
+                    next.Append(symbol);
+                }
+            }
+
+           
+            current = next.ToString();
+
+            // 6. Registrar el resultado de cada iteración en derivation.
+            if (derivation != null)
+            {
+                derivation.Add(current);
+            }
+        }
+        
+        
+        
+        
+        // 7. Retornar la cadena obtenida al finalizar.
+        axiom = current;
         return axiom;
     }
 

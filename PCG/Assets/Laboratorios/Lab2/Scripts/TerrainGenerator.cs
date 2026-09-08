@@ -102,6 +102,17 @@ public class TerrainGenerator : MonoBehaviour
         get { return autoUpdate; }
     }
 
+    //constructor 
+    public GenerationMethod GenMethod { get { return generationMethod; } set { generationMethod = value; } }
+    public int DiamondIterations { get { return diamondIterations; } set { diamondIterations = value; } }
+    public float DiamondRoughness { get { return diamondRoughness; } set { diamondRoughness = value; } }
+    public float DiamondRoughnessDecay { get { return diamondRoughnessDecay; } set { diamondRoughnessDecay = value; } }
+    public float LowThreshold { get { return lowThreshold; } set { lowThreshold = value; } }
+    public float HighThreshold { get { return highThreshold; } set { highThreshold = value; } }
+    public Color LowColor { get { return lowColor; } set { lowColor = value; } }
+    public Color MiddleColor { get { return middleColor; } set { middleColor = value; } }
+    public Color HighColor { get { return highColor; } set { highColor = value; } }
+
     public void GenerateTerrain()
     {
         int resolution = GetCurrentResolution();

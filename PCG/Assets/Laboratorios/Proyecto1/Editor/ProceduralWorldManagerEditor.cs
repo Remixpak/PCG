@@ -14,6 +14,11 @@ public class ProceduralWorldManagerEditor : Editor
         EditorGUILayout.Space(15);
         EditorGUILayout.LabelField("Acciones de Generación", EditorStyles.boldLabel);
 
+        if (GUILayout.Button("Generar Nueva Semilla", GUILayout.Height(40)))
+        {
+            manager.GenerateSeed();
+        }
+
         GUI.backgroundColor = new Color(0.3f, 0.8f, 0.4f);
         if (GUILayout.Button("Generar Mundo Completo (Terreno + Random Walk + Árboles)", GUILayout.Height(40)))
         {

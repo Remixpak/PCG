@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class ProceduralWorldManager : MonoBehaviour
 {
+    [Min(-1)]
+    [SerializeField] private int seed = 0; // semilla para generar el terreno, si es -1 se genera una semilla aleatoria
+
     [Header("Referencia Terreno")]
     [SerializeField] private TerrainGenerator terrainGenerator; // obtenemos como referencia al terrain generator para poder generar el terreno, obtenemos su semilla y otros parametros(el color/decay los ajustamos dentro de codigo )
 
@@ -26,6 +29,12 @@ public class ProceduralWorldManager : MonoBehaviour
     [SerializeField] private Transform treeContainer;// contenedor donde se instancian los arboles generados por el random walk
     [SerializeField] private Transform coralContainer;// contenedor donde se instancian los corales generados por el random walk
 
+    
+    public void GenerateSeed()
+    {
+        seed = Random.Range(0, int.MaxValue);
+    }
+
     [ContextMenu("Generar Mundo Completo")]
     public void GenerateFullWorld()// genera el terreno y luego ejecuta el random walk para generar arboles
     {
@@ -46,6 +55,12 @@ public class ProceduralWorldManager : MonoBehaviour
         terrainGenerator.MiddleColor = new Color(0.45f, 0.3f, 0.15f, 1f);
         terrainGenerator.HighColor = new Color(0.9f, 0.9f, 0.9f, 1f);
 
+        if (seed != -1)
+        {
+            terrainGenerator.Seed = seed;
+            Random.InitState(seed);
+        }
+
         terrainGenerator.GenerateTerrain();//generamos el terreno
 
         Terrain terrain = terrainGenerator.GetComponentInChildren<Terrain>();// obtenemos el componente terrain del terrain generator
@@ -56,6 +71,7 @@ public class ProceduralWorldManager : MonoBehaviour
         }
 
         ClearTrees();
+        ClearCorals();
 
         // obtenemos los datos del terreno para poder calcular la posicion de los arboles/corales
         TerrainData terrainData = terrain.terrainData;
@@ -66,7 +82,7 @@ public class ProceduralWorldManager : MonoBehaviour
         int gridHeight = terrainData.heightmapResolution;
 
         // definimos las direcciones posibles para el random walk (arriba, abajo, izquierda, derecha)
-        //basicamente random walk
+        // basicamente random walk
         Vector2Int[] directions = new Vector2Int[]
         {
             new Vector2Int(1, 0),
@@ -96,12 +112,18 @@ public class ProceduralWorldManager : MonoBehaviour
                     float worldX = terrainPos.x + (normX * terrainSize.x);
                     float worldZ = terrainPos.z + (normZ * terrainSize.z);
 
+                    // verificar altura
                     float worldY = terrain.SampleHeight(new Vector3(worldX, 0, worldZ)) + terrainPos.y;
 
-                    Vector3 spawnPosition = new Vector3(worldX, worldY, worldZ);
+                    // no spawnear arboles en la parte mas alta del terreno
+                    float maxAllowedHeight = terrainPos.y + (terrainSize.y * 0.7f);
+                    if (worldY <= maxAllowedHeight)
+                    {
+                        Vector3 spawnPosition = new Vector3(worldX, worldY, worldZ);
 
-                    LSystemTreeGenerator newTree = Instantiate(referenciaBosque, spawnPosition, Quaternion.identity, GetTreeContainer());
-                    newTree.GenerateTree();
+                        LSystemTreeGenerator newTree = Instantiate(referenciaBosque, spawnPosition, Quaternion.identity, GetTreeContainer());
+                        newTree.GenerateTree();
+                    }
                 }
             }
         }
@@ -119,13 +141,19 @@ public class ProceduralWorldManager : MonoBehaviour
         //parametros para generar un terreno de mar
         terrainGenerator.GenMethod = TerrainGenerator.GenerationMethod.DiamondSquare;
         terrainGenerator.DiamondIterations = 7;
-        terrainGenerator.DiamondRoughness = 0.45f;
-        terrainGenerator.DiamondRoughnessDecay = 0.55f;
+        terrainGenerator.DiamondRoughness = 0.4f;
+        terrainGenerator.DiamondRoughnessDecay = 0.4f;
         terrainGenerator.LowThreshold = 0.3f;
         terrainGenerator.HighThreshold = 0.75f;
         terrainGenerator.LowColor = new Color(0.039f, 0.110f, 0.157f, 1f);
         terrainGenerator.MiddleColor = new Color(0.102f, 0.294f, 0.361f, 1f);
         terrainGenerator.HighColor = new Color(0.761f, 0.698f, 0.502f, 1f);
+        
+        if (seed != -1)
+        {
+            terrainGenerator.Seed = seed;
+            Random.InitState(seed);
+        }
 
         terrainGenerator.GenerateTerrain();//generamos el terreno
 
@@ -138,6 +166,7 @@ public class ProceduralWorldManager : MonoBehaviour
         }
 
         ClearCorals();
+        ClearTrees();
 
         // obtenemos los datos del terreno para poder calcular la posicion de los corales
         TerrainData terrainData = terrain.terrainData;

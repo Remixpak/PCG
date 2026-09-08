@@ -112,6 +112,7 @@ public class TerrainGenerator : MonoBehaviour
     public Color LowColor { get { return lowColor; } set { lowColor = value; } }
     public Color MiddleColor { get { return middleColor; } set { middleColor = value; } }
     public Color HighColor { get { return highColor; } set { highColor = value; } }
+    public int Seed { get { return seed; } set { seed = value; } }
 
     public void GenerateTerrain()
     {

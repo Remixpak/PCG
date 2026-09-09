@@ -1,6 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+//este script se encarga de unificar la generacion de terreno, Lsystem y diamond Square implementando el random walk para generar arboles y corales, ademas de manejar la semilla de generacion y la limpieza del terreno
+//adicionalmente se maneja un random walk para cada generacion de arboles/colores ya que puede ser escalable para modificar ciertos parametros de generacion de vegetacion
+//por lo que se decidio dejar uno para cada terreno para darle indepedencia total a cada mapa 
+
 public class ProceduralWorldManager : MonoBehaviour
 {
     [Min(-1)]
@@ -21,15 +25,34 @@ public class ProceduralWorldManager : MonoBehaviour
 
     [Min(1)]
     [SerializeField] private int totalSteps = 100;// cantidad de pasos que da el random walk, cada paso es una posicion donde puede generar un arbol/coral
+    // esto lo manejamos con un bool ToClose que verifica si la generacion de vegetacion esta muy cerca una de otra, lo utilizamos dentro del random walk
 
     [Range(0f, 1f)]
     [SerializeField] private float treeSpawnChance = 0.2f;// probabilidad de generar un arbol/coral en cada paso del random walk
+
+    [Min(0f)]
+    [SerializeField] private float minDistance = 3f; // distancia minimma de generacion entre la vegetacion en general (arboles/corales) para dar grado de realismo, si es 0 se pueden generar arboles/corales pegados entre si
 
     [Header("Contenedor")]
     [SerializeField] private Transform treeContainer;// contenedor donde se instancian los arboles generados por el random walk
     [SerializeField] private Transform coralContainer;// contenedor donde se instancian los corales generados por el random walk
 
-    
+
+    //constructor de las variables de terrain generator
+    public int Seed { get { return seed; } set { seed = value; } }
+    public int WalkIterations { get { return walkIterations; } set { walkIterations = value; } }
+    public int TotalSteps { get { return totalSteps; } set { totalSteps = value; } }
+    public float TreeSpawnChance { get { return treeSpawnChance; } set { treeSpawnChance = value; } }
+    public float MinDistance { get { return minDistance; } set { minDistance = value; } }
+
+    public float TerrainWidth = 100f; // ancho del terreno generado, se puede ajustar desde el inspector o desde la UI
+    public float TerrainLength = 100f;// largo del terreno generado, se puede ajustar desde el inspector o desde la UI
+
+    public LSystemTreeGenerator ReferenciaBosque { get { return referenciaBosque; } } // obtenemos la referencia del l system con el axioma que lo transforma en arbol
+    public LSystemTreeGenerator ReferenciaCoral { get { return referenciaCoral; } }// obtenemos la referencia del l system con el axioma que lo transforma en coral
+
+
+    // funcion para generar una semilla aleatoria, se puede llamar desde la UI para generar un mundo diferente cada vez
     public void GenerateSeed()
     {
         seed = Random.Range(0, int.MaxValue);
@@ -44,7 +67,10 @@ public class ProceduralWorldManager : MonoBehaviour
             return;
         }
 
-        //parametros para generar un terreno de bosque
+        terrainGenerator.TerrainWidth = TerrainWidth;
+        terrainGenerator.TerrainLength = TerrainLength;
+
+        //parametros para generar un terreno de bosque predefinidos, se pueden ajustar desde el inspector o desde la UI
         terrainGenerator.GenMethod = TerrainGenerator.GenerationMethod.DiamondSquare;
         terrainGenerator.DiamondIterations = 7;
         terrainGenerator.DiamondRoughness = 0.85f;
@@ -55,6 +81,7 @@ public class ProceduralWorldManager : MonoBehaviour
         terrainGenerator.MiddleColor = new Color(0.45f, 0.3f, 0.15f, 1f);
         terrainGenerator.HighColor = new Color(0.9f, 0.9f, 0.9f, 1f);
 
+        // si se asigna una semilla, se utiliza para generar el terreno y los arboles/corales, si no se asigna una semilla, se genera una semilla aleatoria
         if (seed != -1)
         {
             terrainGenerator.Seed = seed;
@@ -91,7 +118,9 @@ public class ProceduralWorldManager : MonoBehaviour
             new Vector2Int(0, -1)
         };
 
-        // ejecutamos el random walk para generar arboles/corales
+        List<Vector3> spawnedPositions = new List<Vector3>();
+
+        // ejecutamos el random walk para generar arboles
         for (int iter = 0; iter < walkIterations; iter++)
         {
             int currentX = Random.Range(0, gridWidth);
@@ -121,8 +150,22 @@ public class ProceduralWorldManager : MonoBehaviour
                     {
                         Vector3 spawnPosition = new Vector3(worldX, worldY, worldZ);
 
-                        LSystemTreeGenerator newTree = Instantiate(referenciaBosque, spawnPosition, Quaternion.identity, GetTreeContainer());
-                        newTree.GenerateTree();
+                        bool tooClose = false; // verificamos si la posicion de spawn esta demasiado cerca de otra posicion ya generada, si es asi no generamos el arbol/coral
+                        foreach (Vector3 pos in spawnedPositions)// verificamos si la posicion de spawn esta demasiado cerca de otra posicion ya generada, si es asi no generamos el arbol/coral
+                        {
+                            if (Vector3.Distance(spawnPosition, pos) < minDistance)// si la distancia entre la posicion de spawn y otra posicion ya generada es menor a la distancia minima, no generamos el arbol/coral
+                            {
+                                tooClose = true;// si la distancia entre la posicion de spawn y otra posicion ya generada es menor a la distancia minima, no generamos el arbol/coral
+                                break;
+                            }
+                        }
+
+                        if (!tooClose)
+                        {
+                            LSystemTreeGenerator newTree = Instantiate(referenciaBosque, spawnPosition, Quaternion.identity, GetTreeContainer());
+                            newTree.GenerateTree();
+                            spawnedPositions.Add(spawnPosition);
+                        }
                     }
                 }
             }
@@ -138,7 +181,10 @@ public class ProceduralWorldManager : MonoBehaviour
             return;
         }
 
-        //parametros para generar un terreno de mar
+        terrainGenerator.TerrainWidth = TerrainWidth;
+        terrainGenerator.TerrainLength = TerrainLength;
+
+        //parametros para generar un terreno de mar predefinidos, se pueden ajustar desde el inspector o desde la UI
         terrainGenerator.GenMethod = TerrainGenerator.GenerationMethod.DiamondSquare;
         terrainGenerator.DiamondIterations = 7;
         terrainGenerator.DiamondRoughness = 0.4f;
@@ -148,7 +194,8 @@ public class ProceduralWorldManager : MonoBehaviour
         terrainGenerator.LowColor = new Color(0.039f, 0.110f, 0.157f, 1f);
         terrainGenerator.MiddleColor = new Color(0.102f, 0.294f, 0.361f, 1f);
         terrainGenerator.HighColor = new Color(0.761f, 0.698f, 0.502f, 1f);
-        
+
+        // si se asigna una semilla, se utiliza para generar el terreno y los arboles/corales, si no se asigna una semilla, se genera una semilla aleatoria
         if (seed != -1)
         {
             terrainGenerator.Seed = seed;
@@ -176,7 +223,6 @@ public class ProceduralWorldManager : MonoBehaviour
         int gridWidth = terrainData.heightmapResolution;
         int gridHeight = terrainData.heightmapResolution;
 
-
         //random walk 
         Vector2Int[] directions = new Vector2Int[]
         {
@@ -185,6 +231,8 @@ public class ProceduralWorldManager : MonoBehaviour
             new Vector2Int(0, 1),
             new Vector2Int(0, -1)
         };
+
+        List<Vector3> spawnedPositions = new List<Vector3>();
 
         // ejecutamos el random walk para generar corales
         for (int iter = 0; iter < walkIterations; iter++)
@@ -207,12 +255,31 @@ public class ProceduralWorldManager : MonoBehaviour
                     float worldX = terrainPos.x + (normX * terrainSize.x);
                     float worldZ = terrainPos.z + (normZ * terrainSize.z);
 
+                    // verificar altura
                     float worldY = terrain.SampleHeight(new Vector3(worldX, 0, worldZ)) + terrainPos.y;
 
-                    Vector3 spawnPosition = new Vector3(worldX, worldY, worldZ);
+                    float maxAllowedHeight = terrainPos.y + (terrainSize.y * 0.75f);
+                    if (worldY <= maxAllowedHeight)
+                    {
+                        Vector3 spawnPosition = new Vector3(worldX, worldY, worldZ);
 
-                    LSystemTreeGenerator newCoral = Instantiate(referenciaCoral, spawnPosition, Quaternion.identity, GetCoralContainer());
-                    newCoral.GenerateTree();
+                        bool tooClose = false;// verificamos si la posicion de spawn esta demasiado cerca de otra posicion ya generada, si es asi no generamos el arbol/coral
+                        foreach (Vector3 pos in spawnedPositions)// verificamos si la posicion de spawn esta demasiado cerca de otra posicion ya generada, si es asi no generamos el arbol/coral
+                        {
+                            if (Vector3.Distance(spawnPosition, pos) < minDistance)// si la distancia entre la posicion de spawn y otra posicion ya generada es menor a la distancia minima, no generamos el arbol/coral
+                            {
+                                tooClose = true;// si la distancia entre la posicion de spawn y otra posicion ya generada es menor a la distancia minima, no generamos el arbol/coral
+                                break;
+                            }
+                        }
+
+                        if (!tooClose)// si la distancia entre la posicion de spawn y otra posicion ya generada es mayor a la distancia minima, generamos el arbol/coral
+                        {
+                            LSystemTreeGenerator newCoral = Instantiate(referenciaCoral, spawnPosition, Quaternion.identity, GetCoralContainer());// instanciamos el l system con el axioma que lo transforma en coral en la posicion de spawn
+                            newCoral.GenerateTree();// generamos el coral
+                            spawnedPositions.Add(spawnPosition);// agregamos la posicion de spawn a la lista de posiciones generadas para verificar la distancia minima en la siguiente iteracion
+                        }
+                    }
                 }
             }
         }
@@ -264,6 +331,7 @@ public class ProceduralWorldManager : MonoBehaviour
             terrainGenerator.DeleteTerrain();
         }
     }
+
     // obtenemos el contenedor de arboles, si no existe lo creamos
     private Transform GetTreeContainer()
     {

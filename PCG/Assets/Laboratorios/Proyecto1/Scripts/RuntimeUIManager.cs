@@ -24,6 +24,7 @@ public class RuntimeUIManager : MonoBehaviour
 
     //obtenemios como referencia dentro del inspector los botones de la UI que vamos a usar para generar el mundo y limpiar el mundo
     [Header("UI - Buttons")]
+    public Button btnRandomizeSeed;
     public Button btnGenerateMountain;
     public Button btnGenerateSea;
     public Button btnClearAll;
@@ -35,6 +36,7 @@ public class RuntimeUIManager : MonoBehaviour
 
     private void Start()
     {
+        btnRandomizeSeed.onClick.AddListener(RandomizeSeed);
         btnGenerateMountain.onClick.AddListener(GenerateMountain);//agregamos un listener al boton de generar montañas para que llame a la funcion GenerateMountain cuando se haga click en el boton
         btnGenerateSea.onClick.AddListener(GenerateSea);//agregamos un listener al boton de generar mar para que llame a la funcion GenerateSea cuando se haga click en el boton
         btnClearAll.onClick.AddListener(Clear);//agregamos un listener al boton de limpiar para que llame a la funcion Clear cuando se haga click en el boton
@@ -47,6 +49,9 @@ public class RuntimeUIManager : MonoBehaviour
         {
             btnToggleUI.onClick.AddListener(ToggleVisibility);
         }
+
+        worldManager.GenerateFullWorld();
+        FocusCameraOnTerrain();
     }
 
     private void ToggleVisibility() //funcion para manejar la visibilidad de la UI
@@ -130,11 +135,16 @@ public class RuntimeUIManager : MonoBehaviour
         }
     }
 
+    private void RandomizeSeed()
+    {
+        int newSeed = Random.Range(int.MinValue, int.MaxValue);
+        seedInput.text = newSeed.ToString();
+        ApplySettings();
+    }
+
     private void GenerateMountain()//funcion para generar el mundo de montañas
     {
         ApplySettings();
-        worldManager.ClearForestWorld();
-        worldManager.ClearSeaWorld();
         worldManager.GenerateFullWorld();
         FocusCameraOnTerrain();
     }
@@ -142,8 +152,6 @@ public class RuntimeUIManager : MonoBehaviour
     private void GenerateSea()//funcion para generar el mundo de mar
     {
         ApplySettings();
-        worldManager.ClearForestWorld();
-        worldManager.ClearSeaWorld();
         worldManager.GenerateSeaWorld();
         FocusCameraOnTerrain();
     }

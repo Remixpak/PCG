@@ -52,6 +52,7 @@ public class ProceduralWorldManager : MonoBehaviour
     public LSystemTreeGenerator ReferenciaCoral { get { return referenciaCoral; } }// obtenemos la referencia del l system con el axioma que lo transforma en coral
 
 
+
     // funcion para generar una semilla aleatoria, se puede llamar desde la UI para generar un mundo diferente cada vez
     public void GenerateSeed()
     {
@@ -66,6 +67,9 @@ public class ProceduralWorldManager : MonoBehaviour
             Debug.LogError("Asigna el TerrainGenerator en el Inspector.");
             return;
         }
+
+        ClearTrees();//limpiamos el terreno de arboles/corales antes de generar un nuevo mundo
+        ClearCorals();
 
         terrainGenerator.TerrainWidth = TerrainWidth;
         terrainGenerator.TerrainLength = TerrainLength;
@@ -97,8 +101,7 @@ public class ProceduralWorldManager : MonoBehaviour
             return;
         }
 
-        ClearTrees();
-        ClearCorals();
+        
 
         // obtenemos los datos del terreno para poder calcular la posicion de los arboles/corales
         TerrainData terrainData = terrain.terrainData;
@@ -180,6 +183,9 @@ public class ProceduralWorldManager : MonoBehaviour
             Debug.LogError("Asigna el TerrainGenerator en el Inspector.");
             return;
         }
+
+        ClearTrees();//limpiamos el terreno de arboles/corales antes de generar un nuevo mundo
+        ClearCorals();
 
         terrainGenerator.TerrainWidth = TerrainWidth;
         terrainGenerator.TerrainLength = TerrainLength;

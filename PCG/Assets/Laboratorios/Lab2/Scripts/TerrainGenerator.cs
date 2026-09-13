@@ -42,7 +42,8 @@ public class TerrainGenerator : MonoBehaviour
     [SerializeField] private int seed = 12345;
 
     [Tooltip("Método utilizado para combinar los valores de los puntos de control en Value Noise.")]
-    [SerializeField] private HeightmapGenerator.InterpolationMode valueNoiseInterpolation =
+    [SerializeField]
+    private HeightmapGenerator.InterpolationMode valueNoiseInterpolation =
         HeightmapGenerator.InterpolationMode.Bilinear;
 
     [Tooltip("Distancia, medida en muestras del heightmap, entre los puntos aleatorios utilizados por Value Noise. Valores mayores generan características de mayor escala.")]
@@ -53,7 +54,8 @@ public class TerrainGenerator : MonoBehaviour
     [SerializeField] private float perlinFrequency = 4f;
 
     [Tooltip("Método utilizado para combinar las contribuciones de los gradientes vecinos en Perlin Noise.")]
-    [SerializeField] private HeightmapGenerator.InterpolationMode perlinInterpolation =
+    [SerializeField]
+    private HeightmapGenerator.InterpolationMode perlinInterpolation =
         HeightmapGenerator.InterpolationMode.Bicubic;
 
     [Tooltip("Cantidad de subdivisiones realizadas por Diamond-Square. También determina la resolución final mediante 2^iterations + 1.")]
@@ -173,7 +175,21 @@ public class TerrainGenerator : MonoBehaviour
         {
             ClearHeightColors();
         }
+
+        Debug.Log("[TerrainDebug] Terrain existe: " + (generatedTerrain != null));
+
+        if (generatedTerrain != null)
+        {
+            Debug.Log("[TerrainDebug] Terrain activo en jerarquía: " + generatedTerrain.gameObject.activeInHierarchy);
+            Debug.Log("[TerrainDebug] Posición: " + generatedTerrain.transform.position + " | Tamaño: " + generatedTerrain.terrainData.size);
+            Debug.Log("[TerrainDebug] Heightmap resolution: " + generatedTerrain.terrainData.heightmapResolution);
+            Debug.Log("[TerrainDebug] Cantidad de TerrainLayers: " + generatedTerrain.terrainData.terrainLayers.Length);
+
+            Material mat = generatedTerrain.materialTemplate;
+            Debug.Log("[TerrainDebug] materialTemplate: " + (mat != null ? mat.name + " | Shader: " + mat.shader.name + " | Shader soportado: " + mat.shader.isSupported : "NULL"));
+        }
     }
+
 
     public int GetCurrentResolution()
     {
@@ -200,6 +216,16 @@ public class TerrainGenerator : MonoBehaviour
         if (generatedTerrain == null)
         {
             CreateTerrain(resolution);
+        }
+
+        // --- OPCIÓN 1: ASEGURAR MATERIAL DESDE RESOURCES ---
+        if (generatedTerrain.materialTemplate == null)
+        {
+            Material loadedMat = Resources.Load<Material>("TerrainMaterial"); // Asegúrate de guardar tu material en una carpeta Resources con este nombre
+            if (loadedMat != null)
+            {
+                generatedTerrain.materialTemplate = loadedMat;
+            }
         }
 
         TerrainData terrainData = generatedTerrain.terrainData;
@@ -233,6 +259,13 @@ public class TerrainGenerator : MonoBehaviour
         terrainObject.transform.localPosition = Vector3.zero;
 
         generatedTerrain = terrainObject.GetComponent<Terrain>();
+
+        // --- OPCIÓN 1 AL CREAR EL TERRENO ---
+        Material loadedMat = Resources.Load<Material>("TerrainMaterial");
+        if (loadedMat != null && generatedTerrain != null)
+        {
+            generatedTerrain.materialTemplate = loadedMat;
+        }
     }
 
     private void ApplyHeightmap(float[,] heights)

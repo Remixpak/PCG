@@ -697,6 +697,15 @@ public class LSystemTreeGenerator : MonoBehaviour
 
     private void EnsureGeneratedRoot()
     {
+
+        // Si no hay un material asignado desde el inspector, lo cargamos desde Resources
+        if (branchMaterial == null)
+        {
+            branchMaterial = Resources.Load<Material>("BranchMaterial");
+        }
+
+
+
         if (generatedRoot != null)
         {
             return;

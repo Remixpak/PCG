@@ -122,42 +122,56 @@ public class PokemonCSVLoader : MonoBehaviour
         // ReadString(...)
         // ReadInt(...)
 
-        string[] lineas = csvFile.text.Split('\n');
+        string[] lineas = csvFile.text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries); // Dividimos el contenido del CSV en líneas, eliminando líneas vacías
 
-        //Debug.Log();
+        if (lineas.Length <= 1)// Si el largo de las lineas es menor o igual a 1, significa que no hay datos para procesar, por lo que se retorna sin hacer nada
+            return;
 
-        // un for que matchea los headers con la lista que nos interesa y cuando lo encuentra guarda el index
+        // Obtenemos todos los headers de la primera línea con ParseCsvLine
+        List<string> headers = ParseCsvLine(lineas[0]);
 
-        var number = ParseCsvLine(lineas[0])[0].ToString();
-        var name = ParseCsvLine(lineas[0])[1].ToString();
-        var type1 = ParseCsvLine(lineas[0])[2].ToString();
-        var type2 = ParseCsvLine(lineas[0])[3].ToString();
-        var hp = ParseCsvLine(lineas[0])[5].ToString();
-        var att = ParseCsvLine(lineas[0])[6].ToString();
-        var spa = ParseCsvLine(lineas[0])[7].ToString();
-        var def = ParseCsvLine(lineas[0])[8].ToString();
-        var speed = ParseCsvLine(lineas[0])[9].ToString();
-        var bst = ParseCsvLine(lineas[0])[11].ToString();
+        // Construimos el mapa de columnas automáticamente con el método provisto
+        Dictionary<string, int> columnMap = BuildColumnMap(headers);
 
-        List<string> headers = new List<string>() { number, name, type1, type2, hp, att, spa, def, speed, bst };
+        pokemon.Clear();//limpiamos la lista de pokemon antes de cargar nuevos datos
 
-        Dictionary<string, int> columnMap = new Dictionary<string, int>();
-        columnMap.Add(number, 0);
-        columnMap.Add(name, 1);
-        columnMap.Add(type1, 2);
-        columnMap.Add(type2, 3);
-        columnMap.Add(hp, 5);
-        columnMap.Add(att, 6);
-        columnMap.Add(spa, 7);
-        columnMap.Add(def, 8);
+        // un for que recorre las filas de datos a partir de la línea 1
+        for (int i = 1; i < lineas.Length; i++)
+        {
+            List<string> values = ParseCsvLine(lineas[i]);//parseamos la línea actual para obtener los valores de cada columna
+            if (values.Count == 0)//si no hay valores en la línea actual, se continúa con la siguiente iteración
+                continue;
 
-        BuildColumnMap(headers);
+            string name = ReadString(values, columnMap.ContainsKey("Name") ? columnMap["Name"] : 1);//leemos el nombre del pokemon, si no existe la columna "Name", se asume que está en la columna 1
+            string type1 = ReadString(values, columnMap.ContainsKey("Type 1") ? columnMap["Type 1"] : 2);//leemos el tipo 1 del pokemon, si no existe la columna "Type 1", se asume que está en la columna 2
+            string type2 = ReadString(values, columnMap.ContainsKey("Type 2") ? columnMap["Type 2"] : 3);//leemos el tipo 2 del pokemon, si no existe la columna "Type 2", se asume que está en la columna 3
+            int hp = ReadInt(values, columnMap.ContainsKey("HP") ? columnMap["HP"] : 5);//leemos los puntos de vida del pokemon, si no existe la columna "HP", se asume que está en la columna 5
+            int att = ReadInt(values, columnMap.ContainsKey("Att") ? columnMap["Att"] : 6);//leemos el ataque del pokemon, si no existe la columna "Att", se asume que está en la columna 6
+            int spa = ReadInt(values, columnMap.ContainsKey("Spa") ? columnMap["Spa"] : 7);//leemos el ataque especial del pokemon, si no existe la columna "Spa", se asume que está en la columna 7
+            int def = ReadInt(values, columnMap.ContainsKey("Def") ? columnMap["Def"] : 8);//leemos la defensa del pokemon, si no existe la columna "Def", se asume que está en la columna 8
+            int spd = ReadInt(values, columnMap.ContainsKey("Spd") ? columnMap["Spd"] : 9);//leemos la velocidad del pokemon, si no existe la columna "Spd", se asume que está en la columna 9
+            int speed = ReadInt(values, columnMap.ContainsKey("Spe") ? columnMap["Spe"] : 10);//leemos la velocidad del pokemon, si no existe la columna "Spe", se asume que está en la columna 10
+            int bst = ReadInt(values, columnMap.ContainsKey("BST") ? columnMap["BST"] : 11);//leemos el total de estadísticas del pokemon, si no existe la columna "BST", se asume que está en la columna 11
 
-        pokemon.Clear();
+            PokemonData data = new PokemonData//creamos un nuevo objeto PokemonData con los valores leídos
+            {
+                name = name,
+                type1 = type1,
+                type2 = type2,
+                hp = hp,
+                offense = Math.Max(att, spa),
+                defense = Math.Max(def, spd),
+                speed = speed,
+                bst = bst
+            };
 
-        Debug.LogWarning(
-            "[PokemonCSVLoader] TODO: implementar Load()."
-        );
+            pokemon.Add(data);//agregamos el objeto PokemonData a la lista de pokemon
+
+            //descomentar para probar que funcione la carga del csv
+            //Debug.Log($"[PokemonCSVLoader] Cargado: {data.name} | Tipos: {data.type1}/{data.type2} | OFF: {data.offense} | DEF: {data.defense} | BST: {data.bst}");
+        }
+
+        //Debug.LogWarning($"[PokemonCSVLoader] Carga completa. Total de Pokémon válidos: {pokemon.Count}");
     }
 
     // ============================================================

@@ -6,6 +6,30 @@ public class GeneticAlgorithm : MonoBehaviour
 {
     [Header("Genetic Algorithm")]
 
+    //Movi los atributos del script para dejarlo mas ordenados poniendolos al inicio pero igual quedan los comentarios de cada uno abajo
+
+    [Min(2)]//fijamos el valor en 2 minimo ya que necesitamos por lo menos 2 individuos para poder cruzarlos y generar descendencia.
+    [SerializeField] private int populationSize = 50;//fijamos el valor en 50 individuos para la población inicial.
+
+    [Min(1)]//fijamos el valor en 1 minimo ya que necesitamos por lo menos 1 generación para poder evaluar la población inicial.
+    [SerializeField] private int generations = 80;//fijamos el valor en 80 generaciones para poder evaluar la población inicial y generar nuevas poblaciones.
+
+    [Range(0f, 1f)]//fijamos el rango entre 0 y1 para la probabilidad de cruzar dos padres.
+    [SerializeField] private float crossoverRate = 0.80f;//fijamos el valor en 0.80 para la probabilidad de cruzar dos padres.
+
+    [Range(0f, 1f)]//fijamos el rango entre 0 y1 para la probabilidad de mutar un individuo.
+    [SerializeField] private float mutationRate = 0.12f;//fijamos el valor en 0.12 para la probabilidad de mutar un individuo.
+
+    [Min(2)]//necesitamos minimo 2 individuos para poder seleccionar un padre, por lo que fijamos el valor en 2.
+    [SerializeField] private int tournamentSize = 3;//fijamos el valor en 3 para la cantidad de individuos que compiten para seleccionar un padre.
+
+    [Min(0)]//fijamos el valor en 0 para la cantidad de individuos que pasan directamente a la siguiente generación.    
+    [SerializeField] private int elitism = 2;//fijamos el valor en 2 para la cantidad de individuos que pasan directamente a la siguiente generación.
+
+    [Header("Debug")]
+    [SerializeField] private bool logProgress = true;
+
+
     /*
      * populationSize = cantidad de individuos de la población.
      *
@@ -24,8 +48,6 @@ public class GeneticAlgorithm : MonoBehaviour
      *
      * Cada gen es el índice de un Pokémon dentro del dataset.
      */
-    [Min(2)]
-    [SerializeField] private int populationSize = 50;
 
     /*
      * generations = cantidad de veces que repetimos el ciclo evolutivo.
@@ -37,16 +59,12 @@ public class GeneticAlgorithm : MonoBehaviour
      * ...
      * Generation 80 -> población final
      */
-    [Min(1)]
-    [SerializeField] private int generations = 80;
 
     /*
      * crossoverRate = probabilidad de cruzar dos padres.
      *
      * crossoverRate = 0.80  -> aproximadamente 80%.
      */
-    [Range(0f, 1f)]
-    [SerializeField] private float crossoverRate = 0.80f;
 
     /*
      * mutationRate = probabilidad de reemplazar cada gen.
@@ -56,8 +74,6 @@ public class GeneticAlgorithm : MonoBehaviour
      * Cada una de las 6 posiciones del equipo tiene 12%
      * de probabilidad de ser reemplazada por otro Pokémon.
      */
-    [Range(0f, 1f)]
-    [SerializeField] private float mutationRate = 0.12f;
 
     /*
      * tournamentSize = cantidad de individuos que compiten
@@ -72,9 +88,6 @@ public class GeneticAlgorithm : MonoBehaviour
      *
      * seleccionado -> B
      */
-    [Min(2)]
-    [SerializeField] private int tournamentSize = 3;
-
     /*
      * elitism = mejores individuos que pasan directamente
      * a la siguiente generación.
@@ -84,12 +97,6 @@ public class GeneticAlgorithm : MonoBehaviour
      * nextPopulation comienza con:
      * [bestIndividual, secondBestIndividual]
      */
-    [Min(0)]
-    [SerializeField] private int elitism = 2;
-
-    [Header("Debug")]
-    [SerializeField] private bool logProgress = true;
-
     /*
      * ============================================================
      * ALGORITMO GENÉTICO
@@ -144,6 +151,7 @@ public class GeneticAlgorithm : MonoBehaviour
             return null;
 
         System.Random random = new System.Random();
+
 
         // TODO 1: Crear population con CreateInitialPopulation(...)
         // TODO 2: Evaluar la población inicial.

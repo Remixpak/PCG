@@ -122,6 +122,14 @@ public class PokemonCSVLoader : MonoBehaviour
         // ReadString(...)
         // ReadInt(...)
 
+        //Funcionamiento :p 
+
+        //basicamente el metodo lo que hace es procesar el csv dividiendo su texto en lineas utilizando un diccionario para mapear automaticamente los Headers del csv con su indice
+        //donde luego se limpia la lista interna y recorre cada fila de datos de forma iterativa para crear un obejto pokemonData con los valores leidos de cada columna y finalmente se agrega a la lista interna de pokemon
+        // adicionalmente tambien calculamos los atributos de offense y defense utilizando los valores de ataque y defensa leidos del csv
+        // y basicamernte dejamos todo listo para ser usado en los algoritmos evolutivos
+
+
         string[] lineas = csvFile.text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries); // Dividimos el contenido del CSV en líneas, eliminando líneas vacías
 
         if (lineas.Length <= 1)// Si el largo de las lineas es menor o igual a 1, significa que no hay datos para procesar, por lo que se retorna sin hacer nada

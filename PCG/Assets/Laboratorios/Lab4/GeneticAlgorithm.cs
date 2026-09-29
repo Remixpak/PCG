@@ -6,6 +6,53 @@ public class GeneticAlgorithm : MonoBehaviour
 {
     [Header("Genetic Algorithm")]
 
+
+    /*Funcionamiento:
+     * 
+     * Basicamente este script implementa un algoritmo genetico clasico
+     * el cual se usa para generar de forma procedural equipos optimops de 6 pokemon (6 genes diferentes)
+     * que cumplen con condiciones de poder y diversidad basandose en seleccion , cruze y mutacion
+     * 
+     * El sistema crea una poblacion inicial aleatoria y a lo largo de varias generaciones 
+     * ordena por fitness, preserva elites y slecciona padres mediante torneos, cruzando sus genes
+     * aplicando mutaciones y evaluando la aptitud de los decensidnetes ciclo tras ciclo
+     * 
+     * 
+     * 
+     * ¿Que diferencia tiene con el de evolucion?
+     * 
+     * Este algortimo selecciona a los padres mediante torneos, generando hijos mediante el cruce/mutacion y armando una nueva pblacioon combinando un numero fijo
+     * de elites mas los hijos nuevos para rellenar la poblacion
+     * 
+     * Basicamente este algoritmo abusa del cruce(combinando genes de dos padres) para mezclas buenas caracteristicas de diversos equipos
+     * 
+     * DE FORMA ABREVIADA! => mezclamos un pappá y una mamá para crear hijos para obtener mejores equipos
+     * 
+     * 
+     * Palabras clave
+     * 
+     * #Gen:  cada una de las 6 posiciones de un equipo guarda el numero de indice de un pokemon en el dataset
+     * #Fitness: es basicamente la aptitud que es una puntuacion numerica que mide que tan bueno/poderoso o equilibrado es el equipo
+     * #Mutacion: cambio aleatorio donde un pokemon es reemplazado por otro del dataset
+     * #Elitismo: regla del algortimo genetico que permite que los mejores equpos de una generacion pasen a la siguiente sin sufrir cambios
+     * 
+     * Parametros que maneja el algoritmo(aunque igual estan definidos abajo)
+     * 
+     * PopulationSize: cantidad de equipos que particiopan y evolucionan en cada  gen
+     * Generations: Numero de ciclos evolutivos que reptira el algoritmo para encontrar la solucion optima
+     * Crossover Rate: Probabilidad de combinar los genes de dos padres para crear un hijo nuevo
+     * MutationRate:probabilidad de qu un pokemon cambie por otro del dataset
+     * Tournamentsize: cantidada de equopos que compiten entre si para elegir un padre ganador
+     * Elitism: numero de mejores equpos que pasan directamente sin cambios para la soguiente generacion (esta escrito arriba igual)
+     * 
+     * 
+     *  #Recordatorio que el el algoritmo buscara el mejor equipo que cumpla con el fitness de 1000
+     */
+
+
+
+
+
     //Movi los atributos del script para dejarlo mas ordenados poniendolos al inicio pero igual quedan los comentarios de cada uno abajo
 
     [Min(2)]//fijamos el valor en 2 minimo ya que necesitamos por lo menos 2 individuos para poder cruzarlos y generar descendencia.
@@ -143,31 +190,38 @@ public class GeneticAlgorithm : MonoBehaviour
      * nextPopulation empieza como [A]
      * y luego se completa con hijos hasta volver a tener 4 individuos.
      */
+
+    //Funcion principal que se encarga de ejecutar el ciclo completo del algoritmo
     public PokemonTeamCandidate Generate(
         IReadOnlyList<PokemonData> dataset,
         PokemonTeamGenerationConfig config)
     {
+        //verificamos que el dataset no sea nulo o no este vacio antes de empezar
         if (dataset == null || dataset.Count == 0)
             return null;
 
-        System.Random random = new System.Random();
+        System.Random random = new System.Random();//inicializamos el generador de numeros aleatorios
 
 
-        // TODO 1: Crear population con CreateInitialPopulation(...)
+        // creamos la poblacion inicial de candidatos aleatorios segun el tamaño del equipo
         List<PokemonTeamCandidate> population = CreateInitialPopulation(dataset.Count, config, random);
-        // TODO 2: Evaluar la población inicial.
+
+        // evaluamos el fitness de todos los individuos
         EvaluatePopulation(population, dataset, config);
-        // TODO 3: Repetir el ciclo evolutivo durante "generations".
+
+        //repetimos el ciclo evolutivo durante la cantidad de generaciones establecidas 
         for (int g = 0; g < generations; g++)
         {
             // Ordenar población por fitness de mayor a menor
             population.Sort((a, b) => b.fitness.CompareTo(a.fitness));
 
+            //si el log esta habilitdado mostramos el progreso del mejor fitness 
             if (logProgress)
             {
                 Debug.Log($"[GeneticAlgorithm] Gen {g}: Mejor Fitness = {population[0].fitness:F4}");
             }
 
+            //creamos una lista vacia para almacenar la nueva generacion de individuos
             List<PokemonTeamCandidate> nextPopulation = new List<PokemonTeamCandidate>();
 
             // Conservar elitismo
@@ -178,21 +232,23 @@ public class GeneticAlgorithm : MonoBehaviour
                 nextPopulation.Add(population[i]);
             }
 
-            // Completar la nueva población
+            // Completar la nueva población mediante seleccion, cruze y mutacion
             while (nextPopulation.Count < populationSize)
             {
+                //seleccionamos al padre a y b utilizando el metodo de torneo
                 PokemonTeamCandidate parentA = TournamentSelection(population, random);
                 PokemonTeamCandidate parentB = TournamentSelection(population, random);
 
                 PokemonTeamCandidate child;
 
+                //evaluamos si aplicacmos cruce basandonos en la prob de crossoverRate
                 if (random.NextDouble() < crossoverRate)
                 {
-                    child = Crossover(parentA, parentB, random);
+                    child = Crossover(parentA, parentB, random);//generamos un hijo combinando los genes de ambos padres
                 }
                 else
                 {
-                    // Copiar directamente los genes del Padre A
+                    // Copiar directamente los genes del Padre A si no hay cruce 
                     child = new PokemonTeamCandidate(parentA.genes.Length);
                     for (int i = 0; i < parentA.genes.Length; i++)
                     {
@@ -201,13 +257,17 @@ public class GeneticAlgorithm : MonoBehaviour
                     
                 }
 
-                // Mutar y evaluar al hijo
+                // Mutar y evaluar al hijo para generar variaciones aleatorias
                 Mutate(child, dataset.Count, random);
+
+                //evaluamos el fitness del nuevo hijo
                 PokemonTeamFitness.Evaluate(child, dataset, config);
 
+                //añadimos al hijo evaluado a la nueva poblacion
                 nextPopulation.Add(child);
             }
 
+            //reemplazamos la poblacion antigua con la nueva creada
             population = nextPopulation;
         }
         //
@@ -224,7 +284,11 @@ public class GeneticAlgorithm : MonoBehaviour
         /*Debug.LogWarning(
             "[GeneticAlgorithm] TODO: implementar Generate()."
         );*/
+
+        //ordenamos por ultima vez la poblacion final para aseugara el mejor equipo
         population.Sort((a, b) => b.fitness.CompareTo(a.fitness));
+
+        //retornamos al mejor condaidado o equipo pokemon optimo encontrado
         return population[0];
 
 
@@ -258,6 +322,8 @@ public class GeneticAlgorithm : MonoBehaviour
      * 6:      add candidate to population
      * 7: return population
      */
+
+    //funcion que se encarga de instanciar y poblar la lsita indicial de candidatos con pokemon de indice aleatorio
     private List<PokemonTeamCandidate> CreateInitialPopulation(
         int datasetSize,
         PokemonTeamGenerationConfig config,
@@ -266,19 +332,20 @@ public class GeneticAlgorithm : MonoBehaviour
         //Crea una lista de datasetSize cantidad de candidatos
         List<PokemonTeamCandidate> population = new List<PokemonTeamCandidate>();
 
+        //repetimos el proceso tnatas veces como indique el tamaño de la poblacion
         for (int i = 0; i < populationSize; i++)
         {
-            PokemonTeamCandidate candidate = new PokemonTeamCandidate(config.teamSize);
+            PokemonTeamCandidate candidate = new PokemonTeamCandidate(config.teamSize);//asignamos un indice pokemon aleatorio y valido del dataset a cada posicion del equipo
             
             for (int j = 0; j < config.teamSize; j++)
             {
                 candidate.genes[j] = random.Next(0, datasetSize);
             }
 
-            population.Add(candidate);
+            population.Add(candidate);//añadimos el equipo candidato compltado a la poblacion
         }
 
-        return population;
+        return population;//retornamos la poblacion incicial completa
     }
 
     /*
@@ -303,6 +370,8 @@ public class GeneticAlgorithm : MonoBehaviour
      * 5:          best = candidate
      * 6: return best
      */
+
+    //funcion de seleccion por torneo donde se eligen candidatos al azar y retorna el que tiene mejor fitness
     private PokemonTeamCandidate TournamentSelection(
         List<PokemonTeamCandidate> population,
         System.Random random)
@@ -313,16 +382,19 @@ public class GeneticAlgorithm : MonoBehaviour
 
         for (int i = 0; i < tournamentSize; i++)
         {
+
+            //seleccionamos un indice aleatorio dentro de la poblacion actual
             int randomIndex = random.Next(0, population.Count);
             PokemonTeamCandidate candidate = population[randomIndex];
 
+            //si el primer participante o su fitness es mejor que el actual lo guardamos como el mejor del torneo
             if (best == null || candidate.fitness > best.fitness)
             {
                 best = candidate;
             }
         }
 
-        return best;
+        return best; //retornamos al mejor ganador del torneo
     }
 
     /*
@@ -352,6 +424,9 @@ public class GeneticAlgorithm : MonoBehaviour
      * 7:          copy gene from parentB
      * 8: return child
      */
+
+
+    //funcion que combina genes de los dos padres en un punto de corte aleatorio para generar hijos
     private PokemonTeamCandidate Crossover(
         PokemonTeamCandidate parentA,
         PokemonTeamCandidate parentB,
@@ -363,15 +438,16 @@ public class GeneticAlgorithm : MonoBehaviour
         // Punto de corte entre 1 y geneCount - 1 para garantizar que reciba genes de ambos padres
         int crossoverPoint = random.Next(1, geneCount);
 
+        //recorremos cada posicion del equipo para asignar los genes de los padres
         for (int i = 0; i < geneCount; i++)
         {
             if (i < crossoverPoint)
             {
-                childGenes[i] = parentA.genes[i];
+                childGenes[i] = parentA.genes[i];//antes del punto de corte heredamos del padre a
             }
             else
             {
-                childGenes[i] = parentB.genes[i];
+                childGenes[i] = parentB.genes[i]; //desde el punto de corte heredamos del padre b
             }
         }
 
@@ -389,7 +465,7 @@ public class GeneticAlgorithm : MonoBehaviour
             }
         }
 
-        return child;
+        return child; // retornamos al nuevo hijo con material genetico combinado
     }
 
     /*
@@ -412,6 +488,8 @@ public class GeneticAlgorithm : MonoBehaviour
      * 3:      if random value < mutationRate:
      * 4:          replace gene with random dataset index
      */
+
+    //funcion que evalua cada gen de forma indiivual y lo reemplaza por un pokemon aleatorio segun la probabilidad
     private void Mutate(
         PokemonTeamCandidate candidate,
         int datasetSize,
@@ -430,6 +508,7 @@ public class GeneticAlgorithm : MonoBehaviour
         }
     }
 
+    //metodo auxiliar para evaluar el fitness de toda la lista de candidatos 
     private void EvaluatePopulation(
         List<PokemonTeamCandidate> population,
         IReadOnlyList<PokemonData> dataset,

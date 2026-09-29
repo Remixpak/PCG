@@ -3,6 +3,30 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
+
+/*
+
+Este script actua como puente entre el UI y los algoritmos
+
+la funcion principal es recibir el orden, verificar que los datos del dataset esten cargados y ejecutar el algoritmo seleccionado para generar un equipo poekmon.
+donde una vez obtenido el mejor equipo se encarga de actualizar visualmente la pantalla mostrando en los slots de la interfaz el nombre, tipos,estadisticas y otros parametros de cada uno de los 6 pokemon
+asi como un resumen del puntaje del fittnes, poder y diversidad.
+
+
+Recordatorio:
+
+-Pokemon Unique types: mide la diversidad de tipos de pokemon compuestos por el equipo :p
+-Roles: clasificacion estrategica de si el equipo cumple con las 3 reglas (o bueno que debe tener por lo menos uno de cada uno), un pokemon fast, defensivo y ofensivo
+-Pokemon Unique: mide la diversidad de pokemon del equipo (6/6 indica que todos son distintos)
+
+*/
+
+
+
+
+
+
+
 public enum TeamGenerationMethod
 {
     GeneticAlgorithm,

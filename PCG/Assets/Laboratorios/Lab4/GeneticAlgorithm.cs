@@ -154,8 +154,62 @@ public class GeneticAlgorithm : MonoBehaviour
 
 
         // TODO 1: Crear population con CreateInitialPopulation(...)
+        List<PokemonTeamCandidate> population = CreateInitialPopulation(dataset.Count, config, random);
         // TODO 2: Evaluar la población inicial.
+        EvaluatePopulation(population, dataset, config);
         // TODO 3: Repetir el ciclo evolutivo durante "generations".
+        for (int g = 0; g < generations; g++)
+        {
+            // Ordenar población por fitness de mayor a menor
+            population.Sort((a, b) => b.fitness.CompareTo(a.fitness));
+
+            if (logProgress)
+            {
+                Debug.Log($"[GeneticAlgorithm] Gen {g}: Mejor Fitness = {population[0].fitness:F4}");
+            }
+
+            List<PokemonTeamCandidate> nextPopulation = new List<PokemonTeamCandidate>();
+
+            // Conservar elitismo
+            int actualElitism = Math.Min(elitism, populationSize);
+            for (int i = 0; i < actualElitism; i++)
+            {
+                // Copia simple o referencia directa (los mejores pasan intactos)
+                nextPopulation.Add(population[i]);
+            }
+
+            // Completar la nueva población
+            while (nextPopulation.Count < populationSize)
+            {
+                PokemonTeamCandidate parentA = TournamentSelection(population, random);
+                PokemonTeamCandidate parentB = TournamentSelection(population, random);
+
+                PokemonTeamCandidate child;
+
+                if (random.NextDouble() < crossoverRate)
+                {
+                    child = Crossover(parentA, parentB, random);
+                }
+                else
+                {
+                    // Copiar directamente los genes del Padre A
+                    child = new PokemonTeamCandidate(parentA.genes.Length);
+                    for (int i = 0; i < parentA.genes.Length; i++)
+                    {
+                        child.genes[i] = parentA.genes[i];
+                    }
+                    
+                }
+
+                // Mutar y evaluar al hijo
+                Mutate(child, dataset.Count, random);
+                PokemonTeamFitness.Evaluate(child, dataset, config);
+
+                nextPopulation.Add(child);
+            }
+
+            population = nextPopulation;
+        }
         //
         // Dentro de cada generación:
         // - ordenar por fitness
@@ -167,11 +221,13 @@ public class GeneticAlgorithm : MonoBehaviour
         // - completar nextPopulation
         // - reemplazar population
 
-        Debug.LogWarning(
+        /*Debug.LogWarning(
             "[GeneticAlgorithm] TODO: implementar Generate()."
-        );
+        );*/
+        population.Sort((a, b) => b.fitness.CompareTo(a.fitness));
+        return population[0];
 
-        return null;
+
     }
 
     /*
@@ -207,8 +263,22 @@ public class GeneticAlgorithm : MonoBehaviour
         PokemonTeamGenerationConfig config,
         System.Random random)
     {
-        // TODO
-        return null;
+        //Crea una lista de datasetSize cantidad de candidatos
+        List<PokemonTeamCandidate> population = new List<PokemonTeamCandidate>();
+
+        for (int i = 0; i < populationSize; i++)
+        {
+            PokemonTeamCandidate candidate = new PokemonTeamCandidate(config.teamSize);
+            
+            for (int j = 0; j < config.teamSize; j++)
+            {
+                candidate.genes[j] = random.Next(0, datasetSize);
+            }
+
+            population.Add(candidate);
+        }
+
+        return population;
     }
 
     /*
@@ -237,8 +307,22 @@ public class GeneticAlgorithm : MonoBehaviour
         List<PokemonTeamCandidate> population,
         System.Random random)
     {
-        // TODO
-        return null;
+        //toma una cantidad tournamentSize de candidatos y evalua su funcion fitness para saber cual es el mejor
+        //luego retorna el mas optimo
+        PokemonTeamCandidate best = null;
+
+        for (int i = 0; i < tournamentSize; i++)
+        {
+            int randomIndex = random.Next(0, population.Count);
+            PokemonTeamCandidate candidate = population[randomIndex];
+
+            if (best == null || candidate.fitness > best.fitness)
+            {
+                best = candidate;
+            }
+        }
+
+        return best;
     }
 
     /*
@@ -273,8 +357,39 @@ public class GeneticAlgorithm : MonoBehaviour
         PokemonTeamCandidate parentB,
         System.Random random)
     {
-        // TODO
-        return null;
+        int geneCount = parentA.genes.Length;
+        int[] childGenes = new int[geneCount];
+
+        // Punto de corte entre 1 y geneCount - 1 para garantizar que reciba genes de ambos padres
+        int crossoverPoint = random.Next(1, geneCount);
+
+        for (int i = 0; i < geneCount; i++)
+        {
+            if (i < crossoverPoint)
+            {
+                childGenes[i] = parentA.genes[i];
+            }
+            else
+            {
+                childGenes[i] = parentB.genes[i];
+            }
+        }
+
+        PokemonTeamCandidate child = new PokemonTeamCandidate(geneCount);
+
+        for (int i = 0; i < geneCount; i++)
+        {
+            if (i < crossoverPoint)
+            {
+                child.genes[i] = parentA.genes[i];
+            }
+            else
+            {
+                child.genes[i] = parentB.genes[i];
+            }
+        }
+
+        return child;
     }
 
     /*
@@ -302,7 +417,17 @@ public class GeneticAlgorithm : MonoBehaviour
         int datasetSize,
         System.Random random)
     {
-        // TODO
+        /*
+        Revisa cada gen de manera individual.
+        Con una probabilidad equivalente a mutationRate (12%), reemplaza el Pokémon de esa casilla por cualquier otro del dataset generado al azar.
+        */
+        for (int i = 0; i < candidate.genes.Length; i++)
+        {
+            if (random.NextDouble() < mutationRate)
+            {
+                candidate.genes[i] = random.Next(0, datasetSize);
+            }
+        }
     }
 
     private void EvaluatePopulation(

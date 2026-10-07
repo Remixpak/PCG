@@ -59,6 +59,11 @@ public class EvolutionaryStrategy : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool logProgress = true;
 
+    public int Mu { get => mu; set => mu = value; }
+    public int Lambda { get => lambda; set => lambda = value; }
+    public int Generations { get => generations; set => generations = value; }
+    public float MutationRate { get => mutationRate; set => mutationRate = value; }
+
     /*
      * mu = cantidad de padres que sobreviven.
      *
@@ -152,7 +157,7 @@ public class EvolutionaryStrategy : MonoBehaviour
      * newParents = [E, C]
      */
 
-    
+
     //esta funcion se encarga de ejecutar el ciclo completo de la estrategia evolutiva de mu + lambda
     public PokemonTeamCandidate Generate(
         IReadOnlyList<PokemonData> dataset, 
@@ -164,17 +169,17 @@ public class EvolutionaryStrategy : MonoBehaviour
 
         System.Random random = new System.Random(); //inicializamos el generador de numeros aleatorios 
 
-        List<PokemonTeamCandidate> parents = CreateInitialParents(mu, dataset.Count, config, random);//creamos la poblacion inicial de "mu" padres aleatorios
+        List<PokemonTeamCandidate> parents = CreateInitialParents(Mu, dataset.Count, config, random);//creamos la poblacion inicial de "mu" padres aleatorios
 
         EvaluatePopulation(parents, dataset, config);//evaluamos el fitness(equilibrio del equipo) de cada uno de los padres iniciales creados 
 
         //repetimos el ciclo evolutivo durante la cantidad de  generaciones que establezcamos
-        for (int gen = 0; gen < generations; gen++)
+        for (int gen = 0; gen < Generations; gen++)
         {
             List<PokemonTeamCandidate> offspring = new List<PokemonTeamCandidate>();//creamos una lista vacia para almacenar a los hijos generados en la gen
 
             //repetimos el proceso un numero de "lambda" veces para crear a todos los decendientes 
-            for (int i = 0; i < lambda; i++)
+            for (int i = 0; i < Lambda; i++)
             {
                 PokemonTeamCandidate randomParent = parents[random.Next(parents.Count)];//seleccionamos un padre de forma aleatoria entre los actuales
                 int[] clonedGenes = (int[])randomParent.genes.Clone();//clonamos los genes del padre seleccionado para pasarselos al hijo
@@ -195,7 +200,7 @@ public class EvolutionaryStrategy : MonoBehaviour
             parents.Clear();//limpiamos la lista de padres par dejar el espacio a los mojones sobrevivimientes 
 
             //seleccionamos y conservamos unicamente a los mejores "mu" individuos como los nuevos padres
-            for (int i = 0; i < Mathf.Min(mu, combined.Count); i++)
+            for (int i = 0; i < Mathf.Min(Mu, combined.Count); i++)
             {
                 parents.Add(combined[i]);
             }
@@ -321,7 +326,7 @@ public class EvolutionaryStrategy : MonoBehaviour
         for (int i = 0; i < candidate.genes.Length; i++)
         {
             //geneeramos un numero aleatorio solo si es menor que la probabilidad de mutacion 
-            if (random.NextDouble() < mutationRate)
+            if (random.NextDouble() < MutationRate)
             {
                 candidate.genes[i] = RandomDifferentPokemon(candidate.genes[i], datasetSize, random);//remplazamos el pokemon actual por otro indice diferente del dataset
                 mutated = true;//marcamos como verdadero que la mutacion ya ocurrio

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 
 /*
@@ -339,8 +340,45 @@ public class PokemonTeamController : MonoBehaviour
     [Header("Summary UI")]
     [SerializeField] private TMP_Text summaryText;
 
-    public void GenerateTeam()
+    [Header("Input UI")]
+    [SerializeField] private GameObject inputTeamSize;
+    [SerializeField] private GameObject inputMinBST;
+    [SerializeField] private GameObject inputMaxBST;
+    [SerializeField] private GameObject inputBSTPenalty;
+    [SerializeField] private GameObject inputUniqueTypes;
+    [SerializeField] private GameObject inputUniqueTypesText;
+    [SerializeField] private GameObject inputFitnessThreshold;
+    [SerializeField] private GameObject inputFitnessThresholdText;
+    [SerializeField] private GameObject inputFallbackCandidates;
+    [SerializeField] private GameObject inputMu;
+    [SerializeField] private GameObject inputLambda;
+    [SerializeField] private GameObject inputGenerationsEvo;
+    [SerializeField] private GameObject inputMutationRateEvo;
+    [SerializeField] private GameObject inputMutationRateEvoText;
+    [SerializeField] private GameObject inputPopulation;
+    [SerializeField] private GameObject inputGenerationsGen;
+    [SerializeField] private GameObject inputTournments;
+    [SerializeField] private GameObject inputElitism;
+    [SerializeField] private GameObject inputMutationRateGen;
+    [SerializeField] private GameObject inputMutationRateGenText;
+    [SerializeField] private GameObject inputCrossRateGen;
+    [SerializeField] private GameObject inputCrossRateGenText;
+
+    private void Start()
     {
+        // Puedes llamar estas funciones en el Start
+        InitializeUIValues();
+        SetupUIListeners();
+    }
+
+    public void GenerateTeam(int methodIndex)
+    {
+        // 1. Actualizamos el método directamente con el parámetro del botón
+        generationMethod = methodIndex == 0
+            ? TeamGenerationMethod.GeneticAlgorithm
+            : TeamGenerationMethod.EvolutionaryStrategy;
+
+        // 2. Comprobaciones de seguridad de los datos
         if (loader == null)
         {
             Debug.LogError("[PokemonTeamController] Loader not assigned.");
@@ -358,23 +396,21 @@ public class PokemonTeamController : MonoBehaviour
 
         PokemonTeamCandidate result = null;
 
+        // 3. Ejecutamos el algoritmo correspondiente
         switch (generationMethod)
         {
             case TeamGenerationMethod.GeneticAlgorithm:
-                if (geneticAlgorithm == null)
-                    return;
-
+                if (geneticAlgorithm == null) return;
                 result = geneticAlgorithm.Generate(loader.Data, config);
                 break;
 
             case TeamGenerationMethod.EvolutionaryStrategy:
-                if (evolutionaryStrategy == null)
-                    return;
-
+                if (evolutionaryStrategy == null) return;
                 result = evolutionaryStrategy.Generate(loader.Data, config);
                 break;
         }
 
+        // 4. Mostramos el resultado
         if (result == null)
         {
             Debug.LogError("[PokemonTeamController] No team was generated.");
@@ -426,11 +462,119 @@ public class PokemonTeamController : MonoBehaviour
             summaryText.text =
                 $"Method: {generationMethod}\n" +
                 $"Fitness: {team.fitness:0.000}\n" +
-                $"Power: {team.powerScore:0.000}   Diversity: {team.diversityScore:0.000}\n" +
+                $"Power: {team.powerScore:0.000}\n" +
+                $"Diversity: {team.diversityScore:0.000}\n" +
                 $"Average BST: {team.averageBST:0.0}\n" +
                 $"Unique Pokemon: {team.uniquePokemon}/{team.genes.Length}\n" +
                 $"Unique Types: {team.uniqueTypes}\n" +
                 $"Roles: {team.uniqueRoles}/3";
+        }
+    }
+
+    // Cosas de UI
+
+    /// Llena todos los inputs y sliders de la UI con los valores que están actualmente en el código.
+    public void InitializeUIValues()
+    {
+        // --- CONFIGURACIÓN GENERAL ---
+        inputTeamSize.GetComponent<TMP_InputField>().text = config.teamSize.ToString();
+        inputMinBST.GetComponent<TMP_InputField>().text = config.minAverageBST.ToString();
+        inputMaxBST.GetComponent<TMP_InputField>().text = config.maxAverageBST.ToString();
+        inputBSTPenalty.GetComponent<TMP_InputField>().text = config.bstPenaltyRange.ToString();
+        inputFallbackCandidates.GetComponent<TMP_InputField>().text = config.fallbackTopCandidates.ToString();
+
+        // Sliders de Configuración
+        Slider uniqueTypesSlider = inputUniqueTypes.GetComponent<Slider>();
+        uniqueTypesSlider.value = config.targetUniqueTypes;
+        inputUniqueTypesText.GetComponent<TMP_Text>().text = config.targetUniqueTypes.ToString();
+
+        Slider fitnessThresholdSlider = inputFitnessThreshold.GetComponent<Slider>();
+        fitnessThresholdSlider.value = config.outputFitnessThreshold;
+        inputFitnessThresholdText.GetComponent<TMP_Text>().text = config.outputFitnessThreshold.ToString("F2");
+
+        // --- EVOLUTIONARY STRATEGY ---
+        // (Nota: Ajusta los nombres de las variables "mu", "lambda", etc., a como se llamen realmente en tu clase EvolutionaryStrategy)
+        if (evolutionaryStrategy != null)
+        {
+            inputMu.GetComponent<TMP_InputField>().text = evolutionaryStrategy.Mu.ToString();
+            inputLambda.GetComponent<TMP_InputField>().text = evolutionaryStrategy.Lambda.ToString();
+            inputGenerationsEvo.GetComponent<TMP_InputField>().text = evolutionaryStrategy.Generations.ToString();
+
+            Slider mutRateEvoSlider = inputMutationRateEvo.GetComponent<Slider>();
+            mutRateEvoSlider.value = evolutionaryStrategy.MutationRate;
+            inputMutationRateEvoText.GetComponent<TMP_Text>().text = evolutionaryStrategy.MutationRate.ToString("F2");
+        }
+
+        // --- GENETIC ALGORITHM ---
+        // (Nota: Ajusta "populationSize", "generations", etc., a como se llamen realmente en tu clase GeneticAlgorithm)
+        if (geneticAlgorithm != null)
+        {
+            inputPopulation.GetComponent<TMP_InputField>().text = geneticAlgorithm.PopulationSize.ToString();
+            inputGenerationsGen.GetComponent<TMP_InputField>().text = geneticAlgorithm.Generations.ToString();
+            inputTournments.GetComponent<TMP_InputField>().text = geneticAlgorithm.TournamentSize.ToString();
+            inputElitism.GetComponent<TMP_InputField>().text = geneticAlgorithm.Elitism.ToString();
+
+            Slider mutRateGenSlider = inputMutationRateGen.GetComponent<Slider>();
+            mutRateGenSlider.value = geneticAlgorithm.MutationRate;
+            inputMutationRateGenText.GetComponent<TMP_Text>().text = geneticAlgorithm.MutationRate.ToString("F2");
+
+            Slider crossRateGenSlider = inputCrossRateGen.GetComponent<Slider>();
+            crossRateGenSlider.value = geneticAlgorithm.CrossoverRate;
+            inputCrossRateGenText.GetComponent<TMP_Text>().text = geneticAlgorithm.CrossoverRate.ToString("F2");
+        }
+    }
+
+    /// Añade los listeners para actualizar las variables cada vez que el usuario modifica un InputField o Slider.
+    public void SetupUIListeners()
+    {
+        // --- LISTENERS: CONFIGURACIÓN GENERAL (InputFields) ---
+        inputTeamSize.GetComponent<TMP_InputField>().onValueChanged.AddListener(val => { if (int.TryParse(val, out int res)) config.teamSize = res; });
+        inputMinBST.GetComponent<TMP_InputField>().onValueChanged.AddListener(val => { if (int.TryParse(val, out int res)) config.minAverageBST = res; });
+        inputMaxBST.GetComponent<TMP_InputField>().onValueChanged.AddListener(val => { if (int.TryParse(val, out int res)) config.maxAverageBST = res; });
+        inputBSTPenalty.GetComponent<TMP_InputField>().onValueChanged.AddListener(val => { if (float.TryParse(val, out float res)) config.bstPenaltyRange = res; });
+        inputFallbackCandidates.GetComponent<TMP_InputField>().onValueChanged.AddListener(val => { if (int.TryParse(val, out int res)) config.fallbackTopCandidates = res; });
+
+        // --- LISTENERS: SLIDERS GENERALES ---
+        inputUniqueTypes.GetComponent<Slider>().onValueChanged.AddListener(val => {
+            config.targetUniqueTypes = Mathf.RoundToInt(val);
+            inputUniqueTypesText.GetComponent<TMP_Text>().text = config.targetUniqueTypes.ToString();
+        });
+
+        inputFitnessThreshold.GetComponent<Slider>().onValueChanged.AddListener(val => {
+            config.outputFitnessThreshold = val;
+            inputFitnessThresholdText.GetComponent<TMP_Text>().text = val.ToString("F2");
+        });
+
+        // --- LISTENERS: EVOLUTIONARY STRATEGY ---
+        if (evolutionaryStrategy != null)
+        {
+            inputMu.GetComponent<TMP_InputField>().onValueChanged.AddListener(val => { if (int.TryParse(val, out int res)) evolutionaryStrategy.Mu = res; });
+            inputLambda.GetComponent<TMP_InputField>().onValueChanged.AddListener(val => { if (int.TryParse(val, out int res)) evolutionaryStrategy.Lambda = res; });
+            inputGenerationsEvo.GetComponent<TMP_InputField>().onValueChanged.AddListener(val => { if (int.TryParse(val, out int res)) evolutionaryStrategy.Generations = res; });
+
+            inputMutationRateEvo.GetComponent<Slider>().onValueChanged.AddListener(val => {
+                evolutionaryStrategy.MutationRate = val;
+                inputMutationRateEvoText.GetComponent<TMP_Text>().text = val.ToString("F2");
+            });
+        }
+
+        // --- LISTENERS: GENETIC ALGORITHM ---
+        if (geneticAlgorithm != null)
+        {
+            inputPopulation.GetComponent<TMP_InputField>().onValueChanged.AddListener(val => { if (int.TryParse(val, out int res)) geneticAlgorithm.PopulationSize = res; });
+            inputGenerationsGen.GetComponent<TMP_InputField>().onValueChanged.AddListener(val => { if (int.TryParse(val, out int res)) geneticAlgorithm.Generations = res; });
+            inputTournments.GetComponent<TMP_InputField>().onValueChanged.AddListener(val => { if (int.TryParse(val, out int res)) geneticAlgorithm.TournamentSize = res; });
+            inputElitism.GetComponent<TMP_InputField>().onValueChanged.AddListener(val => { if (int.TryParse(val, out int res)) geneticAlgorithm.Elitism = res; });
+
+            inputMutationRateGen.GetComponent<Slider>().onValueChanged.AddListener(val => {
+                geneticAlgorithm.MutationRate = val;
+                inputMutationRateGenText.GetComponent<TMP_Text>().text = val.ToString("F2");
+            });
+
+            inputCrossRateGen.GetComponent<Slider>().onValueChanged.AddListener(val => {
+                geneticAlgorithm.CrossoverRate = val;
+                inputCrossRateGenText.GetComponent<TMP_Text>().text = val.ToString("F2");
+            });
         }
     }
 }

@@ -76,6 +76,16 @@ public class GeneticAlgorithm : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool logProgress = true;
 
+    public int PopulationSize { get => populationSize; set => populationSize = value; }
+    public int Generations { get => generations; set => generations = value; }
+    public float CrossoverRate { get => crossoverRate; set => crossoverRate = value; }
+    public float MutationRate { get => mutationRate; set => mutationRate = value; }
+    public int TournamentSize { get => tournamentSize; set => tournamentSize = value; }
+    public int Elitism { get => elitism; set => elitism = value; }
+
+
+
+
 
     /*
      * populationSize = cantidad de individuos de la población.
@@ -210,7 +220,7 @@ public class GeneticAlgorithm : MonoBehaviour
         EvaluatePopulation(population, dataset, config);
 
         //repetimos el ciclo evolutivo durante la cantidad de generaciones establecidas 
-        for (int g = 0; g < generations; g++)
+        for (int g = 0; g < Generations; g++)
         {
             // Ordenar población por fitness de mayor a menor
             population.Sort((a, b) => b.fitness.CompareTo(a.fitness));
@@ -225,7 +235,7 @@ public class GeneticAlgorithm : MonoBehaviour
             List<PokemonTeamCandidate> nextPopulation = new List<PokemonTeamCandidate>();
 
             // Conservar elitismo
-            int actualElitism = Math.Min(elitism, populationSize);
+            int actualElitism = Math.Min(Elitism, PopulationSize);
             for (int i = 0; i < actualElitism; i++)
             {
                 // Copia simple o referencia directa (los mejores pasan intactos)
@@ -233,7 +243,7 @@ public class GeneticAlgorithm : MonoBehaviour
             }
 
             // Completar la nueva población mediante seleccion, cruze y mutacion
-            while (nextPopulation.Count < populationSize)
+            while (nextPopulation.Count < PopulationSize)
             {
                 //seleccionamos al padre a y b utilizando el metodo de torneo
                 PokemonTeamCandidate parentA = TournamentSelection(population, random);
@@ -242,7 +252,7 @@ public class GeneticAlgorithm : MonoBehaviour
                 PokemonTeamCandidate child;
 
                 //evaluamos si aplicacmos cruce basandonos en la prob de crossoverRate
-                if (random.NextDouble() < crossoverRate)
+                if (random.NextDouble() < CrossoverRate)
                 {
                     child = Crossover(parentA, parentB, random);//generamos un hijo combinando los genes de ambos padres
                 }
@@ -333,7 +343,7 @@ public class GeneticAlgorithm : MonoBehaviour
         List<PokemonTeamCandidate> population = new List<PokemonTeamCandidate>();
 
         //repetimos el proceso tnatas veces como indique el tamaño de la poblacion
-        for (int i = 0; i < populationSize; i++)
+        for (int i = 0; i < PopulationSize; i++)
         {
             PokemonTeamCandidate candidate = new PokemonTeamCandidate(config.teamSize);//asignamos un indice pokemon aleatorio y valido del dataset a cada posicion del equipo
             
@@ -380,7 +390,7 @@ public class GeneticAlgorithm : MonoBehaviour
         //luego retorna el mas optimo
         PokemonTeamCandidate best = null;
 
-        for (int i = 0; i < tournamentSize; i++)
+        for (int i = 0; i < TournamentSize; i++)
         {
 
             //seleccionamos un indice aleatorio dentro de la poblacion actual
@@ -501,7 +511,7 @@ public class GeneticAlgorithm : MonoBehaviour
         */
         for (int i = 0; i < candidate.genes.Length; i++)
         {
-            if (random.NextDouble() < mutationRate)
+            if (random.NextDouble() < MutationRate)
             {
                 candidate.genes[i] = random.Next(0, datasetSize);
             }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
 
 public class LightsOutVisualizer : MonoBehaviour
@@ -34,6 +35,49 @@ public class LightsOutVisualizer : MonoBehaviour
                 TileBase selectedTile = (board[x, y] == 1) ? tileOn : tileOff;
 
                 tilemap.SetTile(tilePosition, selectedTile);
+            }
+        }
+    }
+
+    public void LightTile(int x, int y)
+    {
+
+    }
+
+    public Camera mainCamera;
+
+    void Start()
+    {
+        mainCamera = Camera.main;
+    }
+
+    void Update()
+    {
+        // 1. Verificar si hay un mouse conectado y si se presionó el botón izquierdo en este frame
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            // 2. Obtener la posición del mouse en la pantalla como Vector2
+            Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
+
+            // 3. Convertir la posición de la pantalla a posición en el mundo
+            // Pasamos un Vector3 para asegurarnos de que la cámara lo proyecte correctamente
+            Vector3 mouseWorldPos = mainCamera.ScreenToWorldPoint(new Vector3(mouseScreenPos.x, mouseScreenPos.y, mainCamera.nearClipPlane));
+
+            // Asegurarse de que el eje Z sea 0 (o la altura de tu tilemap)
+            mouseWorldPos.z = 0;
+
+            // 4. Convertir esa posición del mundo a coordenadas de la celda (Grid)
+            Vector3Int cellPosition = tilemap.WorldToCell(mouseWorldPos);
+
+            // 5. Comprobar si hay un tile en esa posición
+            if (tilemap.HasTile(cellPosition))
+            {
+                TileBase clickedTile = tilemap.GetTile(cellPosition);
+
+                Debug.Log($"Tile clickeado en la coordenada: {cellPosition}");
+                Debug.Log($"El tile es de tipo: {clickedTile.name}");
+
+                // Aquí puedes agregar tu lógica (construir, destruir, mover personaje, etc.)
             }
         }
     }

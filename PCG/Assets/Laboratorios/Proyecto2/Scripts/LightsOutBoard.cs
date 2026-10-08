@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class LightsOutBoard : MonoBehaviour
@@ -18,7 +19,48 @@ public class LightsOutBoard : MonoBehaviour
 
     void Start()
     {
-        InitializeBoard();
+        board = BackwardsFromGoalState(width, seed);
+        if (visualizer != null)
+        {
+            visualizer.RenderBoard(board, width, height);
+        }
+    }
+
+    private int[,] BackwardsFromGoalState(int dimension = 5, int iterations = 5, int seed = -1)
+    {
+        int[,] newBoard = new int[width, height];
+
+        // Generar seed aleatorio si no se proporciona una
+        if (seed == -1)
+        {
+            seed = Random.Range(0, int.MaxValue);
+        }
+        Random.InitState(seed);
+
+        // Llenar la matriz con 0s (estado final)
+        for(int i = 0; i < dimension; i++)
+        {
+            for(int j = 0; j < dimension; j++)
+            {
+                newBoard[i, j] = 0;
+            }
+        }
+
+        // Realizar iteraciones para encender y apagar luces aleatoriamente, simulando movimientos hacia atrás desde el estado final
+        // Los movimientos en el juego son encender una 'cruz' de luces, que alterna entre estado de encendido y apagado
+        for(int i = 0; i < iterations; i++)
+        {
+            int x = Random.Range(0, dimension);
+            int y = Random.Range(0, dimension);
+
+            newBoard[x, y] = 1 - newBoard[x, y]; // Alternar el estado de la luz seleccionada
+            if(x > 0) newBoard[x - 1, y] = 1 - newBoard[x - 1, y]; // Alternar la luz a la izquierda
+            if(x < dimension - 1) newBoard[x + 1, y] = 1 - newBoard[x + 1, y]; // Alternar la luz a la derecha
+            if(y > 0) newBoard[x, y - 1] = 1 - newBoard[x, y - 1]; // Alternar la luz de arriba
+            if(y < dimension - 1) newBoard[x, y + 1] = 1 - newBoard[x, y + 1]; // Alternar la luz de abajo
+        }
+
+        return newBoard;
     }
 
     public void InitializeBoard()

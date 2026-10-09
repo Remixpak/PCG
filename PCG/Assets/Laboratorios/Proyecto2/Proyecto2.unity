@@ -435,6 +435,7 @@ MonoBehaviour:
   tileOff: {fileID: 11400000, guid: 83c1461b461a76c44a6938c9187a9b53, type: 2}
   tileOn: {fileID: 11400000, guid: 57c8b541dd80a05499209c21f6577448, type: 2}
   centerGrid: 1
+  mainCamera: {fileID: 1761525241}
 --- !u!4 &1811861047
 Transform:
   m_ObjectHideFlags: 0

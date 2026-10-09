@@ -415,8 +415,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LightsOutBoard
   width: 5
   height: 5
+  backwardSteps: 5
   seed: 33
-  useRandomSeedOnStart: 0
+  useRandomSeedOnStart: 1
   visualizer: {fileID: 1811861046}
 --- !u!114 &1811861046
 MonoBehaviour:

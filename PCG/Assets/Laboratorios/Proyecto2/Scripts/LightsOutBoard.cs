@@ -3,8 +3,14 @@ using UnityEngine;
 public class LightsOutBoard : MonoBehaviour
 {
     [Header("Configuración de Grilla")]
+
+    // Tamaño de la grilla (ancho x alto)
     public int width = 5;
     public int height = 5;
+
+    [Header("Generación por Backward from Goal State")]
+    // Número de pasos hacia atrás desde el estado meta (todo apagado)
+    public int backwardSteps = 5;
 
     [Header("Generación por Semilla Numérica")]
     public int seed = 12345;
@@ -25,27 +31,46 @@ public class LightsOutBoard : MonoBehaviour
     {
         board = new int[width, height];
 
-        // Determinar el valor numérico de la semilla
-        int currentSeed = seed;
-
-        if (useRandomSeedOnStart)
-        {
-            // Se usa el valor de Ticks truncado a int32
-            currentSeed = (int)(System.DateTime.Now.Ticks & 0x7FFFFFFF);
-        }
-
-        // System.Random acepta un entero 'int' directamente como parámetro de semilla
-        System.Random pseudoRandom = new System.Random(currentSeed);
-
-        // Llenar la matriz con 0s y 1s
+        // Inicializamos todas las luces en 0 (Estado meta / Goal State)
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                // Genera 0 o 1 de forma determinista segun el entero de la semilla
-                board[x, y] = pseudoRandom.Next(0, 2);
+                board[x, y] = 0;
             }
         }
+
+        // Determinamos el valor numérico de la semilla ANTES de imprimirla
+        int currentSeed = seed;
+
+        if (useRandomSeedOnStart)
+        {
+            // Usamos Guid para garantizar una semilla única en cada ejecución ya que System.Random no tiene un método directo para obtener una semilla aleatoria
+            currentSeed = System.Guid.NewGuid().GetHashCode();
+        }
+
+        // Imprimimos los logs de inicio con la semilla ya calculada y correcta para poder visualizar el estado inicial de la grilla
+        Debug.Log("--- INICIO DE GENERACIÓN BACKWARD FROM GOAL STATE ---");
+        Debug.Log($"---- Semilla actual: {currentSeed} ----");
+        LogBoardState("Estado Inicial (Todo apagado):");
+
+        // System.Random acepta un entero 'int' directamente como parámetro de semilla
+        System.Random pseudoRandom = new System.Random(currentSeed);
+
+        // Aplicar los pasos hacia atrás del algoritmo (Backward)
+        for (int i = 0; i < backwardSteps; i++)
+        {
+            int randX = pseudoRandom.Next(0, width);
+            int randY = pseudoRandom.Next(0, height);
+
+            // Simulamos el clic inverso en la celda y sus vecinos
+            ToggleCellAndNeighbors(randX, randY);
+
+            // Imprimimos en consola cómo quedó la matriz en este paso
+            LogBoardState($"Paso {i + 1} (Clic inverso en X:{randX}, Y:{randY}):");
+        }
+
+        Debug.Log("--- FIN DE GENERACIÓN ---");
 
         // Notificar al visualizador para que pinte la grilla
         if (visualizer != null)
@@ -54,7 +79,42 @@ public class LightsOutBoard : MonoBehaviour
         }
     }
 
-    //metodo de acceso al estado de la casilla
+    // Metodo que invierte el estado de una celda y sus 4 vecinos directos
+    private void ToggleCellAndNeighbors(int x, int y)
+    {
+        ToggleCell(x, y);
+        ToggleCell(x + 1, y);
+        ToggleCell(x - 1, y);
+        ToggleCell(x, y + 1);
+        ToggleCell(x, y - 1);
+    }
+
+    // Metodo auxiliar seguro para cambiar el estado validando los límites
+    private void ToggleCell(int x, int y)
+    {
+        if (x >= 0 && x < width && y >= 0 && y < height)
+        {
+            board[x, y] = 1 - board[x, y];
+        }
+    }
+
+    // Metodo auxiliar para imprimir el estado actual de la matriz en la consola de Unity
+    private void LogBoardState(string message)
+    {
+        string boardString = message + "\n";
+        for (int y = height - 1; y >= 0; y--) // imprimos de arriba a abajo para que coincida visualmente
+        {
+            string rowStr = "[ ";
+            for (int x = 0; x < width; x++)
+            {
+                rowStr += board[x, y] + " ";
+            }
+            boardString += rowStr + "]\n";
+        }
+        Debug.Log(boardString);
+    }
+
+    // Metodo de acceso al estado de la casilla
     public int GetState(int x, int y)
     {
         return board[x, y];

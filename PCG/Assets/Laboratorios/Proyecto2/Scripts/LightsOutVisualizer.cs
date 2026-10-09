@@ -3,6 +3,10 @@ using UnityEngine.Tilemaps;
 
 public class LightsOutVisualizer : MonoBehaviour
 {
+
+    //basicamente este script se encarga de renderizar la grilla en el Tilemap, usando los Tiles asignados para cada estado (0 o 1)
+    //en pocas palabras es la parte grafica asi que no se toca
+
     [Header("Referencias de Tilemap")]
     public Tilemap tilemap;
     public TileBase tileOff; // Asignar el Tile para estado 0

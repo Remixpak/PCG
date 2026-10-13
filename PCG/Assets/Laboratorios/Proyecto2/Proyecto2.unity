@@ -393,6 +393,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1811861047}
   - component: {fileID: 1811861046}
+  - component: {fileID: 1811861048}
+  - component: {fileID: 1811861049}
   - component: {fileID: 1811861045}
   m_Layer: 0
   m_Name: manager
@@ -435,7 +437,6 @@ MonoBehaviour:
   tileOff: {fileID: 11400000, guid: 83c1461b461a76c44a6938c9187a9b53, type: 2}
   tileOn: {fileID: 11400000, guid: 57c8b541dd80a05499209c21f6577448, type: 2}
   centerGrid: 1
-  mainCamera: {fileID: 1761525241}
 --- !u!4 &1811861047
 Transform:
   m_ObjectHideFlags: 0
@@ -451,6 +452,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1811861048
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1811861044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1caad56f7b9fcad4c8430d50616967f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LightsOutGA
+  populationSize: 100
+  maxGenerations: 50
+  crossoverRate: 0.2
+  mutationRate: 0.05
+  tournamentSize: 5
+--- !u!114 &1811861049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1811861044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3a5c9dd0c7024d4c91f5e7a6b1a9cda, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LightsOutTabu
+  tabuTenure: 5
+  maxTabuIterations: 100
 --- !u!1 &2076166764
 GameObject:
   m_ObjectHideFlags: 0

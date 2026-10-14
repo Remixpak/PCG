@@ -148,27 +148,42 @@ public class LightsOutTabu : MonoBehaviour
         }
 
         // imprimimos la lista final de movimientos para comprobar que funciona
-        LogFinalMoves(globalBest.genes);
+        LogFinalMoves(globalBest.genes, currentBoard);
 
         Debug.Log("--- FIN DE TABU SEARCH ---");
     }
 
     //metodo auxiliar que traduce los genes finales a una lista legible de clicks (en eje x e y)
-    private void LogFinalMoves(int[] genes)
+    private void LogFinalMoves(int[] genes, int[] initialBoard)
     {
-        string movesLog = "[TABU] Secuencia final para resolver el tablero (puedes aplicarlos en cualquier orden):\n";
+        Debug.Log("[TABU] Secuencia final para resolver el tablero (puedes aplicarlos en cualquier orden):\n");
+        int[] simulatedBoard = (int[])initialBoard.Clone();
         int moveCount = 1;
+
         for (int i = 0; i < 25; i++)
         {
             if (genes[i] == 1)
             {
                 int x = i % 5;
                 int y = i / 5;
-                movesLog += $"Movimiento {moveCount}: Hacer clic en (X:{x}, Y:{y})\n";
+
+                SimulateClick(simulatedBoard, i);
+
+                string boardString = $"Paso {moveCount} (Clic en X:{x}, Y:{y}):\n";
+                for (int row = 4; row >= 0; row--)
+                {
+                    boardString += "[ ";
+                    for (int col = 0; col < 5; col++)
+                    {
+                        boardString += simulatedBoard[row * 5 + col] + " ";
+                    }
+                    boardString += "]\n";
+                }
+
+                Debug.Log(boardString);
                 moveCount++;
             }
         }
-        Debug.Log(movesLog);
     }
 
     //metodo que evalua que tan buena es la solucion, mejor fitness = mejor solucion

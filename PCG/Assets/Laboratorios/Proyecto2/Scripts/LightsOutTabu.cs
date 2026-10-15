@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using System.Collections.Generic;
 //este script basicamente se encarga de resolver el tablero del ligths usando el tabu como busqueda local
 //donde basicamente parte de una solucion inicial(del GA) y va probando cambiar un click a la vez buscando mejorar
 // y usa una lista "tabu" para no volver a los mismos movimientos durante unas cuentas iteraciones
@@ -42,16 +42,22 @@ public class LightsOutTabu : MonoBehaviour
     public int tabuTenure = 5;//el numero de iteraciones para las cuales queda prohibido un movimiento despues de usarlo
     public int maxTabuIterations = 100;//cuantas iteraciones como maximo va a recorrer la busqueda antes de rendirse
 
+    [Header("Pesos del click para el fitness")]
+    public int clickPenaltyWeight = 50;
     private LightsOutBoard boardController;// referencia al script del tablero real para leer el estado
 
     //representacion de la solucion
     //es igual que en el GA ya que solo nos importa si hacemos click(1) o no (0)
     private class TabuSolution
     {
-        public int[] genes = new int[25]; //25 celdas para el tablero de 5x5
+        public int[] genes; //25 celdas para el tablero de 5x5
         public int fitness = 0; // puntaje de la solucion, cuanto mas alto mejor
         public int lightsLeft = 25;//cuantas luces quedaron encendidas
         public int clicksUsed = 0;//cuantos click se usaron en total
+        public TabuSolution(int size)
+        {
+            genes = new int[size];
+        }
     }
 
     void Start()
@@ -66,41 +72,44 @@ public class LightsOutTabu : MonoBehaviour
         if (boardController == null) return; // si no hay tablero no hace nada 
         Debug.Log("--- INICIANDO TABU SEARCH (BÚSQUEDA LOCAL) ---");
 
-        int[] currentBoard = GetFlatBoardState(); //leemos el tablero actual y lo pasamos a un array plano de 25 pos
-        int[] tabuList = new int[25];//lista tabu donde guardamos en que iteracion cada celda deja de ser prohibida
+        int width = boardController.width;
+        int height = boardController.height;
+        int totalGenes = width * height;
+
+
+        int[] currentBoard = GetFlatBoardState(width, height); //leemos el tablero actual y lo pasamos a un array plano de 25 pos
+        //Ahora es una lista de arreglos de enteros (matrices de genes/estados)
+        List<int[]> tabuList = new List<int[]>();
 
         //arrancamos con la solucion inicial que nos pasa el GA
-        TabuSolution currentSolution = new TabuSolution();
+        TabuSolution currentSolution = new TabuSolution(totalGenes);
         initialGenes.CopyTo(currentSolution.genes, 0);
-        EvaluateFitness(currentSolution, currentBoard);
+        EvaluateFitness(currentSolution, currentBoard, totalGenes);
 
         //guardamos tambien una copia como "mejor global" hasta ahora
-        TabuSolution globalBest = new TabuSolution();
-        currentSolution.genes.CopyTo(globalBest.genes, 0);
-        globalBest.fitness = currentSolution.fitness;
-        globalBest.lightsLeft = currentSolution.lightsLeft;
-        globalBest.clicksUsed = currentSolution.clicksUsed;
+        TabuSolution globalBest = new TabuSolution(totalGenes);
+        CopySolutionData(currentSolution, globalBest, totalGenes);
 
         //cada iteracion prueba invertir cada uno de los 25 genes
         for (int iter = 0; iter < maxTabuIterations; iter++)
         {
             //guardamos el mejor vecino que encontramos en la iteracion
             TabuSolution bestNeighbor = null;
-            int bestFlipIndex = -1;
+            int[] bestNeighborGenes = null;
 
             //probvamos a invertir cada gen y evaluamos su estado
-            for (int i = 0; i < 25; i++)
+            for (int i = 0; i < totalGenes; i++)
             {
                 //clonamos la solucion actual para no modificarla mientras exploramos
-                TabuSolution neighbor = new TabuSolution();
+                TabuSolution neighbor = new TabuSolution(totalGenes);
                 currentSolution.genes.CopyTo(neighbor.genes, 0);
 
                 //invertimos el gen n (simulamos probar el movimiento opuesto)
                 neighbor.genes[i] = 1 - neighbor.genes[i];
-                EvaluateFitness(neighbor, currentBoard);
+                EvaluateFitness(neighbor, currentBoard, totalGenes);
 
                 //revisamos si el movimiento esta prohibido
-                bool isTabu = tabuList[i] > iter;
+                bool isTabu = IsStateInTabuList(neighbor.genes, tabuList);
                 bool aspiration = neighbor.fitness > globalBest.fitness;// la aspiracion es un criterio que dice que si es mejor que el global lo permitimos aunque sea tabu
 
                 //solo consideramos el vecino si no es tabu o si cumple con aspiracion
@@ -110,7 +119,7 @@ public class LightsOutTabu : MonoBehaviour
                     if (bestNeighbor == null || neighbor.fitness > bestNeighbor.fitness)
                     {
                         bestNeighbor = neighbor;
-                        bestFlipIndex = i;
+                        bestNeighborGenes = neighbor.genes;
                     }
                 }
             }
@@ -119,16 +128,13 @@ public class LightsOutTabu : MonoBehaviour
 
             //nos movemos al mejor vecino y marcamos ese movimiento como tabu por un tiempo
             currentSolution = bestNeighbor; 
-            tabuList[bestFlipIndex] = iter + tabuTenure;
+            AddStateToTabuList(currentSolution.genes, tabuList, tabuTenure);
 
 
             //si este nuevo estado es mejor que el global, actualizamos el mejor global
             if (currentSolution.fitness > globalBest.fitness)
             {
-                currentSolution.genes.CopyTo(globalBest.genes, 0);
-                globalBest.fitness = currentSolution.fitness;
-                globalBest.lightsLeft = currentSolution.lightsLeft;
-                globalBest.clicksUsed = currentSolution.clicksUsed;
+                CopySolutionData(currentSolution, globalBest, totalGenes);
             }
 
             // LOG para ver el estado actual
@@ -148,34 +154,80 @@ public class LightsOutTabu : MonoBehaviour
         }
 
         // imprimimos la lista final de movimientos para comprobar que funciona
-        LogFinalMoves(globalBest.genes, currentBoard);
+        LogFinalMoves(globalBest.genes, currentBoard, width, height, totalGenes);
 
         Debug.Log("--- FIN DE TABU SEARCH ---");
     }
 
+    private bool IsStateInTabuList(int[] genes, List<int[]> tabuList)
+    {
+        foreach (var tabuState in tabuList)
+        {
+            if (AreGenesEqual(genes, tabuState))
+            {
+                return true; // El estado está prohibido
+            }
+        }
+        return false;
+    }
+
+    private bool AreGenesEqual(int[] a, int[] b)
+    {
+        if (a.Length != b.Length) return false;
+        for (int i = 0; i < a.Length; i++)
+        {
+            if (a[i] != b[i]) return false;
+        }
+        return true;
+    }
+
+    private void AddStateToTabuList(int[] genes, List<int[]> tabuList, int tenure)
+    {
+        // Clonamos el arreglo para que no se modifique por referencia
+        int[] stateCopy = (int[])genes.Clone();
+        tabuList.Add(stateCopy);
+
+        // Si la lista supera la cantidad permitida (tenure), removemos el elemento más antiguo (FIFO)
+        if (tabuList.Count > tenure)
+        {
+            tabuList.RemoveAt(0);
+        }
+    }
+
+    private void CopySolutionData(TabuSolution source, TabuSolution destination, int totalGenes)
+    {
+        for (int i = 0; i < totalGenes; i++)
+        {
+            destination.genes[i] = source.genes[i];
+        }
+        destination.fitness = source.fitness;
+        destination.lightsLeft = source.lightsLeft;
+        destination.clicksUsed = source.clicksUsed;
+    }
+
     //metodo auxiliar que traduce los genes finales a una lista legible de clicks (en eje x e y)
-    private void LogFinalMoves(int[] genes, int[] initialBoard)
+    private void LogFinalMoves(int[] genes, int[] initialBoard, int width, int height, int totalGenes)
     {
         Debug.Log("[TABU] Secuencia final para resolver el tablero (puedes aplicarlos en cualquier orden):\n");
         int[] simulatedBoard = (int[])initialBoard.Clone();
         int moveCount = 1;
 
-        for (int i = 0; i < 25; i++)
+        for (int i = 0; i < totalGenes; i++)
         {
             if (genes[i] == 1)
             {
-                int x = i % 5;
-                int y = i / 5;
+                int x = i % width;
+                int y = i / height;
 
-                SimulateClick(simulatedBoard, i);
+                SimulateClick(simulatedBoard, i, width, height);
 
                 string boardString = $"Paso {moveCount} (Clic en X:{x}, Y:{y}):\n";
-                for (int row = 4; row >= 0; row--)
+                for (int row = height; row >= 0; row--)
                 {
                     boardString += "[ ";
-                    for (int col = 0; col < 5; col++)
+                    for (int col = 0; col < width; col++)
                     {
-                        boardString += simulatedBoard[row * 5 + col] + " ";
+                        boardString += simulatedBoard[row * width + col] + " ";
                     }
                     boardString += "]\n";
                 }
@@ -187,18 +239,21 @@ public class LightsOutTabu : MonoBehaviour
     }
 
     //metodo que evalua que tan buena es la solucion, mejor fitness = mejor solucion
-    private void EvaluateFitness(TabuSolution sol, int[] baseBoard)
+    private void EvaluateFitness(TabuSolution sol, int[] baseBoard,  int totalGenes)
     {
         //clonamos el tablero base para no modificar el real mientras simulamos
         int[] simulatedBoard = (int[])baseBoard.Clone();
         sol.clicksUsed = 0;
 
+        int width = boardController.width;
+        int height = boardController.height;
+
         //aplicamos los clicks de la solucion al tablero simulado
-        for (int i = 0; i < 25; i++)
+        for (int i = 0; i < totalGenes; i++)
         {
             if (sol.genes[i] == 1)
             {
-                SimulateClick(simulatedBoard, i);
+                SimulateClick(simulatedBoard, i, width, height);
                 sol.clicksUsed++;
             }
         }
@@ -214,41 +269,41 @@ public class LightsOutTabu : MonoBehaviour
         //calculamos el finess en base:
         //-1000 por cada luz encendida y -1 por cada click extra
         //se premia soluciones cortas y que apaguen todo basicamente igual que en el GA
-        sol.fitness = 100000 - (sol.lightsLeft * 1000) - sol.clicksUsed;
+        sol.fitness = 100000 - (sol.lightsLeft * 1000) - (sol.clicksUsed * clickPenaltyWeight);
     }
 
     //metodo que convierte la matriz 5x5 del tablero real en un array plano de 25 posiciones
-    private int[] GetFlatBoardState()
+    private int[] GetFlatBoardState(int width, int height)
     {
-        int[] flat = new int[25];
+        int[] flat = new int[width * height];
         int index = 0;
-        for (int y = 0; y < 5; y++)
+        for (int y = 0; y < height; y++)
         {
-            for (int x = 0; x < 5; x++) flat[index++] = boardController.GetState(x, y);
+            for (int x = 0; x < width; x++) flat[index++] = boardController.GetState(x, y);
         }
         return flat;
     }
 
     //metodo que simula un clic en una cewlda del tablero plano y a y afectra a sus vecinos (basicamente la logica al clickear en el juego original)
-    private void SimulateClick(int[] board, int index)
+    private void SimulateClick(int[] board, int index, int width, int height)
     {
         //convertimos el indice plano a coordenadas x,y
-        int x = index % 5;
-        int y = index / 5;
+        int x = index % width;
+        int y = index / width;
         //invertimos la celda y sus 4 vecinos directos, igual que en el juego real
-        ToggleFlat(board, x, y);
-        ToggleFlat(board, x + 1, y);
-        ToggleFlat(board, x - 1, y);
-        ToggleFlat(board, x, y + 1);
-        ToggleFlat(board, x, y - 1);
+        ToggleFlat(board, x, y, width, height);
+        ToggleFlat(board, x + 1, y, width, height);
+        ToggleFlat(board, x - 1, y, width, height);
+        ToggleFlat(board, x, y + 1, width, height);
+        ToggleFlat(board, x, y - 1, width, height);
     }
 
     //metodo auxiliar seguro que invierte una celda del tablero plano validando los limites
-    private void ToggleFlat(int[] board, int x, int y)
+    private void ToggleFlat(int[] board, int x, int y, int width, int height)
     {
-        if (x >= 0 && x < 5 && y >= 0 && y < 5)
+        if (x >= 0 && x < width && y >= 0 && y < height)
         {
-            int index = y * 5 + x;
+            int index = y * width + x;
             board[index] = 1 - board[index];
         }
     }

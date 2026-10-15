@@ -56,19 +56,29 @@ public class LightsOutGA : MonoBehaviour
     [Range(0f, 1f)] public float crossoverRate = 0.80f;//probabilidad de que los padres se crucen (si no se cruzan el hijo es copia del padre A)
     [Range(0f, 1f)] public float mutationRate = 0.05f; //probabilidad de que el gen mute (se invierte) al crear al hijo
 
+    [Header("Pesos del fitnes")]
+    public int clickPenaltyWeight = 50;
     [Min(2)]
     public int tournamentSize = 3; //cantidad de individuos que se eligen para decidir quien es el padre
 
+    [Header("Configuración de Selección por Filtro")]
+    [Tooltip("Cantidad de elementos superiores a considerar para seleccionar aleatoriamente a la mejor solución o padres en caso de empates.")]
+    [Min(1)]
+    public int filterPoolSize = 3;
     private LightsOutBoard boardController; // referencia al script que maneja el tablero
 
 
     //representacion del cromosoma (individuo)
     public class Individual
     {
-        public int[] genes = new int[25]; // 25 celdas para un tablero 5x5
+        public int[] genes; // 25 celdas para un tablero 5x5
         public int fitness = 0; // puntaje del individuo , cuanto mas alto es mejor la solucion
         public int lightsLeft = 25;// cuantas luces quedaron apagadas despues de los clicks
         public int clicksUsed = 0;//cuantos clicks se uso en total(sirve para premiar soluciones mas cortas)
+        public Individual(int size)
+        {
+            genes = new int[size];
+        }
     }
 
     void Start()
@@ -88,6 +98,8 @@ public class LightsOutGA : MonoBehaviour
         List<Individual> population = CreateInitialPopulation();//se crea la primera poblacion completamente al azar
         Individual bestSolution = null; //se guarda el mejor individuo de cada gen
 
+        int totalGenes = boardController.width * boardController.height;
+
         //bucle principal donde una iteracion = una generacion
         for (int gen = 0; gen < maxGenerations; gen++)
         {
@@ -99,8 +111,8 @@ public class LightsOutGA : MonoBehaviour
 
             //ordenamos la poblacion de mejor a peor fitness (siendo el indice 0 el mejor)
             population.Sort((a, b) => b.fitness.CompareTo(a.fitness));
-            bestSolution = population[0];
-
+            //bestSolution = population[0];
+            bestSolution = GetFilteredBestSolution(population);
 
             //imprimimos cada 10 generaciones el estado actual (o si ya encontramos la solucion)
             if (gen % 10 == 0 || bestSolution.lightsLeft == 0)
@@ -116,28 +128,28 @@ public class LightsOutGA : MonoBehaviour
             }
 
             List<Individual> newPopulation = new List<Individual>();//si no hay solucion todavia se arma la siguiente gen
-            newPopulation.Add(population[0]); // aplicamos elitismo con el mejor individuo de la poblacion y lo guardamos para no perderlo
-
+            //newPopulation.Add(population[0]); // aplicamos elitismo con el mejor individuo de la poblacion y lo guardamos para no perderlo
+            newPopulation.Add(CopyIndividual(bestSolution, totalGenes));
             //rellenamos la nueva poblacion hasta llegar al tamaño definido
             while (newPopulation.Count < populationSize)
             {
                 //elegimos dos padres por torneo (basicamente el mejor de N al azar gana)
                 Individual parentA = TournamentSelection(population);
                 Individual parentB = TournamentSelection(population);
-                Individual child;
+                Individual child = new Individual(totalGenes);
 
                 //segun la prob de cruce, mezcamos los  genes de ambos padres o copiamos al padre A si no se aplica
                 if (Random.value < crossoverRate)
                 {
-                    child = Crossover(parentA, parentB);
+                    child = Crossover(parentA, parentB, totalGenes);
                 }
                 else
                 {
-                    child = new Individual();
-                    for (int i = 0; i < 25; i++) child.genes[i] = parentA.genes[i];
+                    
+                    for (int i = 0; i < totalGenes; i++) child.genes[i] = parentA.genes[i];
                 }
 
-                Mutate(child);//aplicamos mutacion al hijo(puede que alguno)
+                Mutate(child, totalGenes);//aplicamos mutacion al hijo(puede que alguno)
                 newPopulation.Add(child);
             }
             //la nueva poblacion reemplaza a la anterior para la siguiente gen
@@ -148,7 +160,27 @@ public class LightsOutGA : MonoBehaviour
         return bestSolution;// deveolvemos la mejor solucion que hayamos encontrado en todo el proceso
     }
 
+    private Individual GetFilteredBestSolution(List<Individual> population)
+    {
+        if (population == null || population.Count == 0) return null;
 
+        // Limitamos el tamaño del pool al tamaño actual de la población
+        int poolLimit = Mathf.Clamp(filterPoolSize, 1, population.Count);
+
+        // Buscamos cuántos individuos tienen exactamente el mismo fitness máximo o están dentro del pool
+        int topFitness = population[0].fitness;
+        List<Individual> candidates = new List<Individual>();
+
+        for (int i = 0; i < poolLimit; i++)
+        {
+            // Opcional: podemos incluir a todos los que tengan el mismo fitness top o simplemente los primeros N
+            candidates.Add(population[i]);
+        }
+
+        // Seleccionamos uno al azar de esos mejores candidatos para romper empates de manera justa
+        int randomIndex = Random.Range(0, candidates.Count);
+        return candidates[randomIndex];
+    }
 
     // FUNCIÓN HEURÍSTICA / FITNESS 
     //basicamente evalua que tan buena es la solucion de un individuo donde a mayor fitness es mejor
@@ -157,9 +189,9 @@ public class LightsOutGA : MonoBehaviour
         //clonamos el tablero base para no modificar el real mientras lo simulamos
         int[] simulatedBoard = (int[])baseBoard.Clone();
         ind.clicksUsed = 0;
-
+        int totalGenes = ind.genes.Length;
         // Aplicar los clics del individuo al tablero simulado
-        for (int i = 0; i < 25; i++)
+        for (int i = 0; i < totalGenes; i++)
         {
             if (ind.genes[i] == 1)
             {
@@ -177,8 +209,8 @@ public class LightsOutGA : MonoBehaviour
 
         // El calculo del fitness es basicamente:
         // -100 puntos por cada luz encendida
-        //  se penaliza por cada click extra restando -1 punto para premiar la eficacia
-        ind.fitness = 100000 - (ind.lightsLeft * 1000) - ind.clicksUsed;
+        //  se penaliza por cada click extra restando una cantidad que nosotros definamos  para premiar la eficacia
+        ind.fitness = 100000 - (ind.lightsLeft * 1000) - (ind.clicksUsed * clickPenaltyWeight);
     }
 
     // OPERADORES GENÉTICOS (Inicialización, Cruce y Mutación)
@@ -186,10 +218,11 @@ public class LightsOutGA : MonoBehaviour
     private List<Individual> CreateInitialPopulation()
     {
         List<Individual> pop = new List<Individual>();
+        int totalGenes = boardController.width * boardController.height;
         for (int i = 0; i < populationSize; i++)
         {
-            Individual ind = new Individual();
-            for (int j = 0; j < 25; j++)
+            Individual ind = new Individual(totalGenes);
+            for (int j = 0; j < totalGenes; j++)
             {
                 ind.genes[j] = Random.value > 0.5f ? 1 : 0; // 50% de probababilidad de que el gen sea 1 click
             }
@@ -216,12 +249,12 @@ public class LightsOutGA : MonoBehaviour
     }
 
     //metodo de cruce que basicamente corta los genes en una posicion aleatoria y mezcla al padre a con el b
-    private Individual Crossover(Individual parentA, Individual parentB)
+    private Individual Crossover(Individual parentA, Individual parentB,int totalGenes)
     {
-        Individual child = new Individual();
+        Individual child = new Individual(totalGenes);
         int crossoverPoint = Random.Range(1, 24); // Punto de corte aleatorio entre 1 a 23 (no es 0 ni 24 para que los padres aporten algo)
 
-        for (int i = 0; i < 25; i++)
+        for (int i = 0; i < totalGenes; i++)
         {
             if (i < crossoverPoint)
             {
@@ -237,9 +270,9 @@ public class LightsOutGA : MonoBehaviour
 
     //el metodo de mutacion basiscamente recorre todos los genes y con la probabilidad de mutationrate invierte cada uno
     //# invertir: basicamente invierte la seleccion 0->1 / 1-> 0
-    private void Mutate(Individual ind)
+    private void Mutate(Individual ind, int totalGenes)
     {
-        for (int i = 0; i < 25; i++)
+        for (int i = 0; i < totalGenes; i++)
         {
             if (Random.value < mutationRate)
             {
@@ -252,11 +285,14 @@ public class LightsOutGA : MonoBehaviour
     // basicamente convierte la matriz de 5x5 del tablero real en un array plano de 25 posiciones
     private int[] GetFlatBoardState()
     {
-        int[] flat = new int[25];
+        int width = boardController.width;
+        int height = boardController.height;
+        int[] flat = new int[width * height];
         int index = 0;
-        for (int y = 0; y < 5; y++)
+
+        for (int y = 0; y < height; y++)
         {
-            for (int x = 0; x < 5; x++)
+            for (int x = 0; x < width; x++)
             {
                 flat[index++] = boardController.GetState(x, y);
             }
@@ -267,24 +303,38 @@ public class LightsOutGA : MonoBehaviour
     //metodo que simula un clic en una celda del tablero plano (con indice de 0 a 24) y afecta a sus vecinos
     private void SimulateClick(int[] board, int index)
     {
-        int x = index % 5;
-        int y = index / 5;
+        int width = boardController.width;
+        int height = boardController.height;
+        int x = index % width;
+        int y = index / width;
 
         //investimos la celda y sus 4 vecinos directos igual que en el juego real
-        ToggleFlat(board, x, y);     // Centro
-        ToggleFlat(board, x + 1, y); // Derecha
-        ToggleFlat(board, x - 1, y); // Izquierda
-        ToggleFlat(board, x, y + 1); // Arriba
-        ToggleFlat(board, x, y - 1); // Abajo
+        ToggleFlat(board, x, y, width, height);     // Centro
+        ToggleFlat(board, x + 1, y, width, height); // Derecha
+        ToggleFlat(board, x - 1, y, width, height); // Izquierda
+        ToggleFlat(board, x, y + 1, width, height); // Arriba
+        ToggleFlat(board, x, y - 1, width, height); // Abajo
     }
 
     //metodo auxiliar que invierte una celda del tablero plano validando los limites
-    private void ToggleFlat(int[] board, int x, int y)
+    private void ToggleFlat(int[] board, int x, int y, int width, int height)
     {
-        if (x >= 0 && x < 5 && y >= 0 && y < 5)
+        if (x >= 0 && x < width && y >= 0 && y < height)
         {
-            int index = y * 5 + x;
+            int index = y * width + x;
             board[index] = 1 - board[index];
         }
+    }
+    private Individual CopyIndividual(Individual source, int totalGenes)
+    {
+        Individual copy = new Individual(totalGenes);
+        for (int i = 0; i < totalGenes; i++)
+        {
+            copy.genes[i] = source.genes[i];
+        }
+        copy.fitness = source.fitness;
+        copy.lightsLeft = source.lightsLeft;
+        copy.clicksUsed = source.clicksUsed;
+        return copy;
     }
 }

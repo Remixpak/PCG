@@ -48,12 +48,13 @@ public class LightsOutTabu : MonoBehaviour
 
     //representacion de la solucion
     //es igual que en el GA ya que solo nos importa si hacemos click(1) o no (0)
-    private class TabuSolution
+    public class TabuSolution
     {
         public int[] genes; //25 celdas para el tablero de 5x5
         public int fitness = 0; // puntaje de la solucion, cuanto mas alto mejor
         public int lightsLeft = 25;//cuantas luces quedaron encendidas
         public int clicksUsed = 0;//cuantos click se usaron en total
+        public int iterationsRun = 0;
         public TabuSolution(int size)
         {
             genes = new int[size];
@@ -67,9 +68,9 @@ public class LightsOutTabu : MonoBehaviour
 
     //metodo principal que ejecuta la busqueda
     //basicamente recibe los genes de la ultima solucion del GA y los mejora
-    public void RunTabuSearch(int[] initialGenes)
+    public TabuSolution RunTabuSearch(int[] initialGenes)
     {
-        if (boardController == null) return; // si no hay tablero no hace nada 
+        if (boardController == null) return null; // si no hay tablero no hace nada 
         Debug.Log("--- INICIANDO TABU SEARCH (BÚSQUEDA LOCAL) ---");
 
         int width = boardController.width;
@@ -96,6 +97,8 @@ public class LightsOutTabu : MonoBehaviour
             //guardamos el mejor vecino que encontramos en la iteracion
             TabuSolution bestNeighbor = null;
             int[] bestNeighborGenes = null;
+
+            globalBest.iterationsRun = iter + 1;
 
             //probvamos a invertir cada gen y evaluamos su estado
             for (int i = 0; i < totalGenes; i++)
@@ -157,6 +160,7 @@ public class LightsOutTabu : MonoBehaviour
         LogFinalMoves(globalBest.genes, currentBoard, width, height, totalGenes);
 
         Debug.Log("--- FIN DE TABU SEARCH ---");
+        return globalBest;
     }
 
     private bool IsStateInTabuList(int[] genes, List<int[]> tabuList)
@@ -222,7 +226,7 @@ public class LightsOutTabu : MonoBehaviour
                 SimulateClick(simulatedBoard, i, width, height);
 
                 string boardString = $"Paso {moveCount} (Clic en X:{x}, Y:{y}):\n";
-                for (int row = height; row >= 0; row--)
+                for (int row = height - 1; row >= 0; row--)
                 {
                     boardString += "[ ";
                     for (int col = 0; col < width; col++)

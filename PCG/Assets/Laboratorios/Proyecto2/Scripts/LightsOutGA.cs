@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 
 //este script basicamente se encarga de resolver el ligths out usando el algortimo genetico
@@ -75,6 +76,7 @@ public class LightsOutGA : MonoBehaviour
         public int fitness = 0; // puntaje del individuo , cuanto mas alto es mejor la solucion
         public int lightsLeft = 25;// cuantas luces quedaron apagadas despues de los clicks
         public int clicksUsed = 0;//cuantos clicks se uso en total(sirve para premiar soluciones mas cortas)
+        public int generationsRun = 0;
         public Individual(int size)
         {
             genes = new int[size];
@@ -154,7 +156,10 @@ public class LightsOutGA : MonoBehaviour
             }
             //la nueva poblacion reemplaza a la anterior para la siguiente gen
             population = newPopulation;
+            bestSolution.generationsRun = gen + 1;
         }
+
+        
 
         Debug.Log("--- FIN DEL ALGORITMO GENÉTICO ---");
         return bestSolution;// deveolvemos la mejor solucion que hayamos encontrado en todo el proceso
@@ -252,7 +257,7 @@ public class LightsOutGA : MonoBehaviour
     private Individual Crossover(Individual parentA, Individual parentB,int totalGenes)
     {
         Individual child = new Individual(totalGenes);
-        int crossoverPoint = Random.Range(1, 24); // Punto de corte aleatorio entre 1 a 23 (no es 0 ni 24 para que los padres aporten algo)
+        int crossoverPoint = Random.Range(1, totalGenes-1); // Punto de corte aleatorio entre 1 a 23 (no es 0 ni 24 para que los padres aporten algo)
 
         for (int i = 0; i < totalGenes; i++)
         {

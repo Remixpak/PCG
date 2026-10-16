@@ -119,6 +119,81 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &199277137
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 199277138}
+  - component: {fileID: 199277140}
+  - component: {fileID: 199277139}
+  m_Layer: 5
+  m_Name: Control
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &199277138
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 199277137}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1477709544}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 262.91858, y: 1.2373047}
+  m_SizeDelta: {x: -555.5316, y: -42.0671}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &199277139
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 199277137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &199277140
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 199277137}
+  m_CullTransparentMesh: 1
 --- !u!1 &432398873
 GameObject:
   m_ObjectHideFlags: 0
@@ -153,7 +228,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -221, y: 226.47}
+  m_AnchoredPosition: {x: -265.5, y: 251.47}
   m_SizeDelta: {x: 527, y: 92.068}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &432398875
@@ -624,6 +699,7 @@ RectTransform:
   m_Children:
   - {fileID: 1110148136}
   - {fileID: 432398874}
+  - {fileID: 199277138}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -781,6 +857,7 @@ GameObject:
   - component: {fileID: 1811861048}
   - component: {fileID: 1811861049}
   - component: {fileID: 1811861045}
+  - component: {fileID: 1811861050}
   m_Layer: 0
   m_Name: manager
   m_TagString: Untagged
@@ -800,8 +877,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9da68bf5d7ce3b64caae1cf7159734dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LightsOutBoard
-  width: 5
-  height: 5
+  width: 6
+  height: 6
   backwardSteps: 5
   seed: 33
   useRandomSeedOnStart: 1
@@ -822,6 +899,7 @@ MonoBehaviour:
   uiButtonPrefab: {fileID: 2272416267866374251, guid: 1f1d1c835d5575242b4016e0f4486e2e, type: 3}
   buttonOffSprite: {fileID: 21300000, guid: 43c87c373ca343740a6bc5d63025cf5e, type: 3}
   buttonOnSprite: {fileID: 21300000, guid: 4ab820055855d964d8851f1ce5480ad4, type: 3}
+  keepSquareAspect: 1
 --- !u!4 &1811861047
 Transform:
   m_ObjectHideFlags: 0
@@ -871,6 +949,27 @@ MonoBehaviour:
   tabuTenure: 5
   maxTabuIterations: 100
   clickPenaltyWeight: 50
+--- !u!114 &1811861050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1811861044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 386920ff63423bf4a868f1f0781be514, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LightsOutUIManager
+  uiPanelContainer: {fileID: 199277137}
+  uiFont: {fileID: 11400000, guid: 1c77233fc59aefb41a8b5412800736c8, type: 2}
+  headerColor: {r: 0.22, g: 0.2, b: 0.25, a: 1}
+  labelColor: {r: 0.18, g: 0.18, b: 0.18, a: 1}
+  controlBgColor: {r: 0.96, g: 0.96, b: 0.96, a: 1}
+  popupCardColor: {r: 0.93, g: 0.9, b: 0.82, a: 1}
+  buttonColor: {r: 0.32, g: 0.32, b: 0.32, a: 1}
+  accentColor: {r: 0.95, g: 0.68, b: 0.25, a: 1}
+  stepAppliedColor: {r: 0.22, g: 0.55, b: 0.3, a: 1}
 --- !u!1 &2050625131
 GameObject:
   m_ObjectHideFlags: 0

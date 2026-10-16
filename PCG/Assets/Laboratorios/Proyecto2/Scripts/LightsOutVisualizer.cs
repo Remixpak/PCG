@@ -118,7 +118,7 @@ public class LightsOutVisualizer : MonoBehaviour
         }
     }
 
-    private void HandleButtonClick(int x, int y)
+    public void HandleButtonClick(int x, int y)
     {
         ToggleCell(x, y);
         ToggleCell(x + 1, y);

@@ -123,4 +123,13 @@ public class LightsOutBoard : MonoBehaviour
     {
         return board[x, y];
     }
+
+    public void ResetCurrentBoard()
+    {
+        if (visualizer != null && board != null)
+        {
+            visualizer.RenderBoard(board, width, height);
+            Debug.Log("--- TABLERO RESTABLECIDO AL ESTADO INICIAL ---");
+        }
+    }
 }

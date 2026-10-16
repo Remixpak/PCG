@@ -24,6 +24,7 @@ public class LightsOutUIManager : MonoBehaviour
     [SerializeField] private Color popupCardColor = new Color(0.93f, 0.90f, 0.82f, 1f);
     [SerializeField] private Color buttonColor = new Color(0.32f, 0.32f, 0.32f, 1f);
     [SerializeField] private Color accentColor = new Color(0.95f, 0.68f, 0.25f, 1f);
+    [SerializeField] private Color stepAppliedColor = new Color(0.22f, 0.55f, 0.30f, 1f);
 
     // Referencias a los componentes en el mismo GameObject
     private LightsOutBoard boardScript;
@@ -36,6 +37,9 @@ public class LightsOutUIManager : MonoBehaviour
     private Transform stepsContentTransform;
     private TMP_Text statsBodyText;
     private TMP_Text popupTitleText;
+
+    // Lista para poder reactivar los botones de "Aplicar" si el jugador presiona "Restablecer Tablero"
+    private readonly List<Button> activeStepButtons = new List<Button>();
 
     // Sistema de Tooltip flotante (compatible con el nuevo Input System via EventSystem)
     private GameObject tooltipObject;
@@ -93,9 +97,6 @@ public class LightsOutUIManager : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        // Layout vertical principal del panel derecho:
-        // [Arriba: Parámetros o Popup de Resultados]
-        // [Abajo: Los 3 botones fijos]
         VerticalLayoutGroup rootLayout = GetOrAddComponent<VerticalLayoutGroup>(uiPanelContainer);
         rootLayout.padding = new RectOffset(18, 18, 14, 14);
         rootLayout.spacing = 10f;
@@ -107,13 +108,13 @@ public class LightsOutUIManager : MonoBehaviour
 
         TMP_DefaultControls.Resources uiResources = new TMP_DefaultControls.Resources();
 
-        // 1. Crear Sub-Panel de Parámetros (activo por defecto)
+        // 1. Sub-Panel de Parámetros
         BuildParametersView(uiResources);
 
-        // 2. Crear Sub-Panel Popup de Resultados (oculto al inicio)
+        // 2. Sub-Panel Popup de Resultados
         BuildResultPopupView(uiResources);
 
-        // 3. Crear Sub-Panel Inferior con los 3 botones siempre visibles
+        // 3. Sub-Panel Inferior con los botones de acción
         BuildBottomButtonsView(uiResources);
 
         ShowParametersView();
@@ -198,11 +199,10 @@ public class LightsOutUIManager : MonoBehaviour
 
     #endregion
 
-    #region Construcción del Popup de Resultados (Boceto Imagen)
+    #region Construcción del Popup de Resultados
 
     private void BuildResultPopupView(TMP_DefaultControls.Resources uiResources)
     {
-        // Contenedor tarjeta del Popup
         resultPopupSubPanel = new GameObject("ResultPopupPanel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(LayoutElement));
         resultPopupSubPanel.transform.SetParent(uiPanelContainer.transform, false);
 
@@ -222,9 +222,7 @@ public class LightsOutUIManager : MonoBehaviour
         popupVLG.childForceExpandWidth = true;
         popupVLG.childForceExpandHeight = false;
 
-        // -----------------------------------------------------------------
         // 1. FILA SUPERIOR DEL POPUP: Título "Resultado" + Botón "[X]"
-        // -----------------------------------------------------------------
         GameObject topBar = new GameObject("PopupTopBar", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
         topBar.transform.SetParent(resultPopupSubPanel.transform, false);
 
@@ -239,7 +237,6 @@ public class LightsOutUIManager : MonoBehaviour
         topBarHLG.childControlHeight = true;
         topBarHLG.childForceExpandWidth = false;
 
-        // Título "Resultado"
         GameObject titleObj = new GameObject("PopupTitle", typeof(RectTransform), typeof(LayoutElement));
         titleObj.transform.SetParent(topBar.transform, false);
         LayoutElement titleLE = titleObj.GetComponent<LayoutElement>();
@@ -254,7 +251,6 @@ public class LightsOutUIManager : MonoBehaviour
         popupTitleText.alignment = TextAlignmentOptions.MidlineLeft;
         ApplyFont(popupTitleText);
 
-        // Botón "X" para volver al panel de parámetros
         GameObject closeBtnObj = TMP_DefaultControls.CreateButton(uiResources);
         closeBtnObj.name = "Btn_ClosePopup";
         closeBtnObj.transform.SetParent(topBar.transform, false);
@@ -280,9 +276,7 @@ public class LightsOutUIManager : MonoBehaviour
         Button closeBtn = closeBtnObj.GetComponent<Button>();
         closeBtn.onClick.AddListener(ShowParametersView);
 
-        // -----------------------------------------------------------------
-        // 2. CUERPO CENTRAL DEL POPUP: 2 Columnas (Izquierda: Pasos con Scrollbar | Derecha: Estadísticas)
-        // -----------------------------------------------------------------
+        // 2. CUERPO CENTRAL DEL POPUP: 2 Columnas (Izquierda: Pasos con botón Aplicar | Derecha: Estadísticas)
         GameObject bodyRow = new GameObject("PopupBodyColumns", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
         bodyRow.transform.SetParent(resultPopupSubPanel.transform, false);
 
@@ -292,20 +286,20 @@ public class LightsOutUIManager : MonoBehaviour
         bodyLE.preferredHeight = 290f;
 
         HorizontalLayoutGroup bodyHLG = bodyRow.GetComponent<HorizontalLayoutGroup>();
-        bodyHLG.spacing = 14f;
+        bodyHLG.spacing = 12f;
         bodyHLG.childAlignment = TextAnchor.UpperLeft;
         bodyHLG.childControlWidth = true;
         bodyHLG.childControlHeight = true;
         bodyHLG.childForceExpandWidth = true;
         bodyHLG.childForceExpandHeight = true;
 
-        // --- COLUMNA IZQUIERDA: "Pasos" + ScrollView con Scrollbar ---
+        // --- COLUMNA IZQUIERDA: "Pasos" + ScrollView ---
         GameObject leftCol = new GameObject("LeftCol_Steps", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(LayoutElement));
         leftCol.transform.SetParent(bodyRow.transform, false);
 
         LayoutElement leftLE = leftCol.GetComponent<LayoutElement>();
-        leftLE.flexibleWidth = 1f;
-        leftLE.preferredWidth = 180f;
+        leftLE.flexibleWidth = 1.15f; // Ligeramente más ancho para alojar el índice + X/Y + botón Aplicar
+        leftLE.preferredWidth = 210f;
         leftLE.flexibleHeight = 1f;
 
         VerticalLayoutGroup leftVLG = leftCol.GetComponent<VerticalLayoutGroup>();
@@ -317,7 +311,6 @@ public class LightsOutUIManager : MonoBehaviour
 
         CreateSubColumnHeader(leftCol.transform, "Pasos");
 
-        // Crear ScrollView con barra de desplazamiento vertical
         GameObject scrollViewObj = CreateStepsScrollView();
         scrollViewObj.transform.SetParent(leftCol.transform, false);
 
@@ -326,8 +319,8 @@ public class LightsOutUIManager : MonoBehaviour
         rightCol.transform.SetParent(bodyRow.transform, false);
 
         LayoutElement rightLE = rightCol.GetComponent<LayoutElement>();
-        rightLE.flexibleWidth = 1.15f;
-        rightLE.preferredWidth = 200f;
+        rightLE.flexibleWidth = 1f;
+        rightLE.preferredWidth = 185f;
         rightLE.flexibleHeight = 1f;
 
         VerticalLayoutGroup rightVLG = rightCol.GetComponent<VerticalLayoutGroup>();
@@ -339,7 +332,6 @@ public class LightsOutUIManager : MonoBehaviour
 
         CreateSubColumnHeader(rightCol.transform, "Estadísticas");
 
-        // Tarjeta interior para el texto de estadísticas
         GameObject statsCard = new GameObject("StatsBox", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(LayoutElement));
         statsCard.transform.SetParent(rightCol.transform, false);
 
@@ -386,9 +378,6 @@ public class LightsOutUIManager : MonoBehaviour
         ApplyFont(tmp);
     }
 
-    /// <summary>
-    /// Construye un ScrollRect con su Viewport, contenedor de filas y Scrollbar vertical.
-    /// </summary>
     private GameObject CreateStepsScrollView()
     {
         DefaultControls.Resources uiRes = new DefaultControls.Resources();
@@ -408,21 +397,19 @@ public class LightsOutUIManager : MonoBehaviour
         scrollRect.movementType = ScrollRect.MovementType.Clamped;
         scrollRect.scrollSensitivity = 20f;
 
-        // 1. Viewport con RectMask2D para recortar los elementos fuera de vista
         GameObject viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D), typeof(Image));
         viewport.transform.SetParent(scrollObj.transform, false);
 
         Image vpImg = viewport.GetComponent<Image>();
-        vpImg.color = new Color(0, 0, 0, 0); // Transparente pero recibe eventos de scroll
+        vpImg.color = new Color(0, 0, 0, 0);
 
         RectTransform vpRect = viewport.GetComponent<RectTransform>();
         vpRect.anchorMin = Vector2.zero;
         vpRect.anchorMax = Vector2.one;
         vpRect.pivot = new Vector2(0f, 1f);
         vpRect.offsetMin = new Vector2(4f, 4f);
-        vpRect.offsetMax = new Vector2(-22f, -4f); // Espacio a la derecha para la Scrollbar
+        vpRect.offsetMax = new Vector2(-22f, -4f);
 
-        // 2. Content (donde se instanciarán las celdas "X:1 Y:2")
         GameObject content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
         content.transform.SetParent(viewport.transform, false);
 
@@ -435,7 +422,7 @@ public class LightsOutUIManager : MonoBehaviour
 
         VerticalLayoutGroup contentVLG = content.GetComponent<VerticalLayoutGroup>();
         contentVLG.padding = new RectOffset(4, 4, 4, 4);
-        contentVLG.spacing = 4f;
+        contentVLG.spacing = 5f;
         contentVLG.childAlignment = TextAnchor.UpperCenter;
         contentVLG.childControlWidth = true;
         contentVLG.childControlHeight = true;
@@ -448,7 +435,6 @@ public class LightsOutUIManager : MonoBehaviour
 
         stepsContentTransform = content.transform;
 
-        // 3. Scrollbar Vertical a la derecha
         GameObject scrollbarObj = DefaultControls.CreateScrollbar(uiRes);
         scrollbarObj.name = "VerticalScrollbar";
         scrollbarObj.transform.SetParent(scrollObj.transform, false);
@@ -479,7 +465,7 @@ public class LightsOutUIManager : MonoBehaviour
 
     #endregion
 
-    #region Construcción de los 3 Botones Fijos Inferiores
+    #region Construcción de los Botones Fijos Inferiores
 
     private void BuildBottomButtonsView(TMP_DefaultControls.Resources uiResources)
     {
@@ -498,14 +484,37 @@ public class LightsOutUIManager : MonoBehaviour
         vlg.childForceExpandWidth = true;
         vlg.childForceExpandHeight = false;
 
-        // Botón 1: Generar Nuevo Tablero (mantiene el tablero listo para jugar y vuelve a parámetros si estaba en el popup)
-        CreateActionButton(buttonsContainer.transform, uiResources, "Generar Nuevo Tablero (Backward)", () =>
+        // FILA 1: "Generar Nuevo Tablero (Backward)" + "Restablecer Tablero" lado a lado
+        GameObject topButtonsRow = new GameObject("BoardButtonsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+        topButtonsRow.transform.SetParent(buttonsContainer.transform, false);
+
+        LayoutElement rowLE = topButtonsRow.GetComponent<LayoutElement>();
+        rowLE.preferredHeight = 34f;
+        rowLE.flexibleWidth = 1f;
+
+        HorizontalLayoutGroup rowHLG = topButtonsRow.GetComponent<HorizontalLayoutGroup>();
+        rowHLG.spacing = 8f;
+        rowHLG.childAlignment = TextAnchor.MiddleCenter;
+        rowHLG.childControlWidth = true;
+        rowHLG.childControlHeight = true;
+        rowHLG.childForceExpandWidth = true;
+        rowHLG.childForceExpandHeight = true;
+
+        // Botón Izquierdo: Generar Nuevo Tablero
+        CreateActionButton(topButtonsRow.transform, uiResources, "Generar Nuevo Tablero", () =>
         {
             boardScript.InitializeBoard();
             ShowParametersView();
-        });
+        }, 1.3f);
 
-        // Botón 2: Resolver solo con Algoritmo Genético (GA)
+        // Botón Derecho: Restablecer el Tablero Actual al estado inicial
+        CreateActionButton(topButtonsRow.transform, uiResources, "Restablecer Tablero", () =>
+        {
+            boardScript.ResetCurrentBoard();
+            ResetStepButtonsState();
+        }, 1f);
+
+        // FILA 2: Resolver solo con Algoritmo Genético (GA)
         CreateActionButton(buttonsContainer.transform, uiResources, "Resolver con Algoritmo Genético (GA)", () =>
         {
             LightsOutGA.Individual bestGA = gaScript.RunEvolution();
@@ -515,7 +524,7 @@ public class LightsOutUIManager : MonoBehaviour
             }
         });
 
-        // Botón 3: Resolver con Algoritmo Memético (GA + Tabu Search)
+        // FILA 3: Resolver con Algoritmo Memético (GA + Tabu Search)
         CreateActionButton(buttonsContainer.transform, uiResources, "Resolver con GA + Tabu Search", () =>
         {
             LightsOutGA.Individual bestGA = gaScript.RunEvolution();
@@ -587,10 +596,12 @@ public class LightsOutUIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Rellena la lista desplazable con las coordenadas X e Y de los clics si logró resolver el tablero.
+    /// Rellena la lista desplazable con el índice del paso, coordenadas X/Y y el botón para aplicarlo en el tablero.
     /// </summary>
     private void PopulateStepsList(int[] genes, bool solved)
     {
+        activeStepButtons.Clear();
+
         foreach (Transform child in stepsContentTransform)
         {
             Destroy(child.gameObject);
@@ -598,7 +609,7 @@ public class LightsOutUIManager : MonoBehaviour
 
         if (!solved)
         {
-            CreateStepListItem("Sin solución exacta (0 luces).");
+            CreateStepInfoItem("Sin solución exacta (0 luces).");
             return;
         }
 
@@ -612,30 +623,132 @@ public class LightsOutUIManager : MonoBehaviour
                 int x = i % width;
                 int y = i / width;
                 stepCount++;
-                CreateStepListItem($"X:{x}  Y:{y}");
+                CreateInteractiveStepItem(stepCount, x, y);
             }
         }
 
         if (stepCount == 0)
         {
-            CreateStepListItem("0 pasos (Ya estaba resuelto)");
+            CreateStepInfoItem("0 pasos (Ya estaba resuelto)");
         }
     }
 
-    private void CreateStepListItem(string text)
+    /// <summary>
+    /// Crea una fila con formato: "[Índice]. X:col Y:fila" a la izquierda y un botón "Aplicar" a la derecha.
+    /// </summary>
+    private void CreateInteractiveStepItem(int stepIndex, int x, int y)
     {
-        GameObject itemObj = new GameObject("StepItem", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(LayoutElement));
+        GameObject itemObj = new GameObject($"Step_{stepIndex}", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
         itemObj.transform.SetParent(stepsContentTransform, false);
 
         LayoutElement itemLE = itemObj.GetComponent<LayoutElement>();
-        itemLE.preferredHeight = 28f;
+        itemLE.preferredHeight = 32f;
+        itemLE.flexibleWidth = 1f;
+
+        Image bg = itemObj.GetComponent<Image>();
+        bg.color = controlBgColor;
+
+        HorizontalLayoutGroup hlg = itemObj.GetComponent<HorizontalLayoutGroup>();
+        hlg.padding = new RectOffset(8, 6, 3, 3);
+        hlg.spacing = 6f;
+        hlg.childAlignment = TextAnchor.MiddleLeft;
+        hlg.childControlWidth = true;
+        hlg.childControlHeight = true;
+        hlg.childForceExpandWidth = false;
+        hlg.childForceExpandHeight = false;
+
+        // Etiqueta con el índice del paso y las coordenadas X e Y
+        GameObject txtObj = new GameObject("StepLabel", typeof(RectTransform), typeof(LayoutElement));
+        txtObj.transform.SetParent(itemObj.transform, false);
+
+        LayoutElement txtLE = txtObj.GetComponent<LayoutElement>();
+        txtLE.flexibleWidth = 1f;
+        txtLE.preferredHeight = 26f;
+
+        TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
+        tmp.text = $"<b>{stepIndex}.</b> X:{x}  Y:{y}";
+        tmp.fontSize = 13.5f;
+        tmp.color = labelColor;
+        tmp.alignment = TextAlignmentOptions.MidlineLeft;
+        ApplyFont(tmp);
+
+        // Botón para aplicar este paso directamente sobre el tablero visual
+        TMP_DefaultControls.Resources resources = new TMP_DefaultControls.Resources();
+        GameObject applyBtnObj = TMP_DefaultControls.CreateButton(resources);
+        applyBtnObj.name = $"Btn_ApplyStep_{stepIndex}";
+        applyBtnObj.transform.SetParent(itemObj.transform, false);
+
+        LayoutElement btnLE = GetOrAddComponent<LayoutElement>(applyBtnObj);
+        btnLE.preferredWidth = 68f;
+        btnLE.minWidth = 64f;
+        btnLE.preferredHeight = 24f;
+
+        Image btnImg = applyBtnObj.GetComponent<Image>();
+        if (btnImg != null) btnImg.color = buttonColor;
+
+        TMP_Text btnTxt = applyBtnObj.GetComponentInChildren<TMP_Text>();
+        if (btnTxt != null)
+        {
+            btnTxt.text = "Aplicar";
+            btnTxt.fontSize = 12f;
+            btnTxt.color = Color.white;
+            ApplyFont(btnTxt);
+        }
+
+        Button applyBtn = applyBtnObj.GetComponent<Button>();
+        int targetX = x;
+        int targetY = y;
+
+        applyBtn.onClick.AddListener(() =>
+        {
+            if (boardScript.visualizer != null)
+            {
+                boardScript.visualizer.HandleButtonClick(targetX, targetY);
+
+                // Marcar visualmente el paso como aplicado para que el jugador no pierda el hilo
+                applyBtn.interactable = false;
+                if (btnImg != null) btnImg.color = stepAppliedColor;
+                if (btnTxt != null) btnTxt.text = "Listo";
+            }
+        });
+
+        activeStepButtons.Add(applyBtn);
+    }
+
+    /// <summary>
+    /// Si el usuario presiona "Restablecer Tablero", reactiva todos los botones "Aplicar" de la lista actual.
+    /// </summary>
+    private void ResetStepButtonsState()
+    {
+        foreach (Button btn in activeStepButtons)
+        {
+            if (btn != null)
+            {
+                btn.interactable = true;
+                if (btn.TryGetComponent(out Image btnImg))
+                    btnImg.color = buttonColor;
+
+                TMP_Text txt = btn.GetComponentInChildren<TMP_Text>();
+                if (txt != null)
+                    txt.text = "Aplicar";
+            }
+        }
+    }
+
+    private void CreateStepInfoItem(string message)
+    {
+        GameObject itemObj = new GameObject("StepInfoItem", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(LayoutElement));
+        itemObj.transform.SetParent(stepsContentTransform, false);
+
+        LayoutElement itemLE = itemObj.GetComponent<LayoutElement>();
+        itemLE.preferredHeight = 32f;
         itemLE.flexibleWidth = 1f;
 
         Image bg = itemObj.GetComponent<Image>();
         bg.color = controlBgColor;
 
         VerticalLayoutGroup vlg = itemObj.GetComponent<VerticalLayoutGroup>();
-        vlg.padding = new RectOffset(8, 8, 2, 2);
+        vlg.padding = new RectOffset(8, 8, 4, 4);
         vlg.childAlignment = TextAnchor.MiddleLeft;
         vlg.childControlWidth = true;
         vlg.childControlHeight = true;
@@ -644,8 +757,8 @@ public class LightsOutUIManager : MonoBehaviour
         txtObj.transform.SetParent(itemObj.transform, false);
 
         TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
-        tmp.text = text;
-        tmp.fontSize = 14f;
+        tmp.text = message;
+        tmp.fontSize = 13.5f;
         tmp.color = labelColor;
         tmp.alignment = TextAlignmentOptions.MidlineLeft;
         ApplyFont(tmp);
@@ -907,7 +1020,12 @@ public class LightsOutUIManager : MonoBehaviour
         toggle.onValueChanged.AddListener((isOn) => onValueChanged?.Invoke(isOn));
     }
 
-    private void CreateActionButton(Transform parent, TMP_DefaultControls.Resources resources, string buttonText, Action onClickAction)
+    private void CreateActionButton(
+        Transform parent,
+        TMP_DefaultControls.Resources resources,
+        string buttonText,
+        Action onClickAction,
+        float flexibleWidthWeight = 1f)
     {
         GameObject btnObj = TMP_DefaultControls.CreateButton(resources);
         btnObj.name = $"Btn_{buttonText}";
@@ -915,7 +1033,7 @@ public class LightsOutUIManager : MonoBehaviour
 
         LayoutElement btnLE = GetOrAddComponent<LayoutElement>(btnObj);
         btnLE.preferredHeight = 34f;
-        btnLE.flexibleWidth = 1f;
+        btnLE.flexibleWidth = flexibleWidthWeight;
 
         Image btnImage = btnObj.GetComponent<Image>();
         if (btnImage != null) btnImage.color = buttonColor;
@@ -924,7 +1042,7 @@ public class LightsOutUIManager : MonoBehaviour
         if (tmp != null)
         {
             tmp.text = buttonText;
-            tmp.fontSize = 14f;
+            tmp.fontSize = 13.5f;
             tmp.color = new Color(0.92f, 0.92f, 0.92f, 1f);
             ApplyFont(tmp);
         }
@@ -935,7 +1053,7 @@ public class LightsOutUIManager : MonoBehaviour
 
     #endregion
 
-    #region Sistema de Tooltip (Sin UnityEngine.Input, 100% compatible con Input System)
+    #region Sistema de Tooltip (100% compatible con Input System)
 
     private void CreateTooltipSystem()
     {
@@ -994,7 +1112,6 @@ public class LightsOutUIManager : MonoBehaviour
     {
         if (tooltipRect == null) return;
 
-        // Ajustar el pivote dinámicamente para que no se salga de la pantalla por la derecha
         if (pointerScreenPosition.x + tooltipRect.rect.width + 20f > Screen.width)
         {
             tooltipRect.pivot = new Vector2(1f, 1f);
@@ -1037,10 +1154,6 @@ public class LightsOutUIManager : MonoBehaviour
     #endregion
 }
 
-/// <summary>
-/// Trigger de Tooltip que obtiene la posición del cursor directamente de PointerEventData,
-/// evitando por completo el error de UnityEngine.Input con el nuevo Input System.
-/// </summary>
 public class UILabelTooltipTrigger : MonoBehaviour, IPointerEnterHandler, IPointerMoveHandler, IPointerExitHandler
 {
     private LightsOutUIManager uiManager;

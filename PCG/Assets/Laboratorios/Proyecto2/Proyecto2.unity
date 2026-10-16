@@ -853,7 +853,9 @@ MonoBehaviour:
   maxGenerations: 50
   crossoverRate: 0.2
   mutationRate: 0.05
+  clickPenaltyWeight: 50
   tournamentSize: 5
+  filterPoolSize: 3
 --- !u!114 &1811861049
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -868,6 +870,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LightsOutTabu
   tabuTenure: 5
   maxTabuIterations: 100
+  clickPenaltyWeight: 50
 --- !u!1 &2050625131
 GameObject:
   m_ObjectHideFlags: 0

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 //este script basicamente se encarga de resolver el tablero del ligths usando el tabu como busqueda local
 //donde basicamente parte de una solucion inicial(del GA) y va probando cambiar un click a la vez buscando mejorar
 // y usa una lista "tabu" para no volver a los mismos movimientos durante unas cuentas iteraciones
+// PSDT: Tabu ternure es basicamente durante cuantas iteraciones estara bloquedo cierto movimiento
 
 
 /*
@@ -68,6 +69,18 @@ public class LightsOutTabu : MonoBehaviour
 
     //metodo principal que ejecuta la busqueda
     //basicamente recibe los genes de la ultima solucion del GA y los mejora
+    //cambio importante en el metodo:
+
+    /* se cambio el tabu de esado por un tabu de accion 
+     * basicamente antes el metodo guardaba el tablero completo (tabu de estado), lo que causaba que el agente caminara en circulos deshaciendo sus propios click
+     * por lo que ahora hacemos el "tabu de accion" ya que guardamos un arreglo simple donde cada posicion representa una celda y se anota hasta que iteracion esta
+     * prohibido volver a tocarla
+       
+    *lo que obliga basicamenta al algortimo a avanzar y aceptar malos putnajes temporales para poder escapar del optimo local (la solucion que dio el GA) en lugar de dar pasos atras
+        
+
+
+    */
     public TabuSolution RunTabuSearch(int[] initialGenes)
     {
         if (boardController == null) return null; // si no hay tablero no hace nada 
@@ -77,10 +90,10 @@ public class LightsOutTabu : MonoBehaviour
         int height = boardController.height;
         int totalGenes = width * height;
 
-
         int[] currentBoard = GetFlatBoardState(width, height); //leemos el tablero actual y lo pasamos a un array plano de 25 pos
-        //Ahora es una lista de arreglos de enteros (matrices de genes/estados)
-        List<int[]> tabuList = new List<int[]>();
+
+        //lista tabu donde guardamos en que iteracion cada celda deja de ser prohibida
+        int[] tabuList = new int[totalGenes];
 
         //arrancamos con la solucion inicial que nos pasa el GA
         TabuSolution currentSolution = new TabuSolution(totalGenes);
@@ -97,6 +110,7 @@ public class LightsOutTabu : MonoBehaviour
             //guardamos el mejor vecino que encontramos en la iteracion
             TabuSolution bestNeighbor = null;
             int[] bestNeighborGenes = null;
+            int bestFlipIndex = -1; //guardamos que celda tocamos para hacerla tabu luego
 
             globalBest.iterationsRun = iter + 1;
 
@@ -111,8 +125,8 @@ public class LightsOutTabu : MonoBehaviour
                 neighbor.genes[i] = 1 - neighbor.genes[i];
                 EvaluateFitness(neighbor, currentBoard, totalGenes);
 
-                //revisamos si el movimiento esta prohibido
-                bool isTabu = IsStateInTabuList(neighbor.genes, tabuList);
+                //revisamos si el movimiento esta prohibido (si la celda esta castigada)
+                bool isTabu = tabuList[i] > iter;
                 bool aspiration = neighbor.fitness > globalBest.fitness;// la aspiracion es un criterio que dice que si es mejor que el global lo permitimos aunque sea tabu
 
                 //solo consideramos el vecino si no es tabu o si cumple con aspiracion
@@ -123,6 +137,7 @@ public class LightsOutTabu : MonoBehaviour
                     {
                         bestNeighbor = neighbor;
                         bestNeighborGenes = neighbor.genes;
+                        bestFlipIndex = i; // anotamos cual fue la celda ganadora
                     }
                 }
             }
@@ -130,9 +145,8 @@ public class LightsOutTabu : MonoBehaviour
             if (bestNeighbor == null) break; // si no encontramos ningun vecino valido se corta la busqueda
 
             //nos movemos al mejor vecino y marcamos ese movimiento como tabu por un tiempo
-            currentSolution = bestNeighbor; 
-            AddStateToTabuList(currentSolution.genes, tabuList, tabuTenure);
-
+            currentSolution = bestNeighbor;
+            tabuList[bestFlipIndex] = iter + tabuTenure; // castigamos la celda tocada para no volver a usarla pronto
 
             //si este nuevo estado es mejor que el global, actualizamos el mejor global
             if (currentSolution.fitness > globalBest.fitness)
@@ -161,41 +175,6 @@ public class LightsOutTabu : MonoBehaviour
 
         Debug.Log("--- FIN DE TABU SEARCH ---");
         return globalBest;
-    }
-
-    private bool IsStateInTabuList(int[] genes, List<int[]> tabuList)
-    {
-        foreach (var tabuState in tabuList)
-        {
-            if (AreGenesEqual(genes, tabuState))
-            {
-                return true; // El estado está prohibido
-            }
-        }
-        return false;
-    }
-
-    private bool AreGenesEqual(int[] a, int[] b)
-    {
-        if (a.Length != b.Length) return false;
-        for (int i = 0; i < a.Length; i++)
-        {
-            if (a[i] != b[i]) return false;
-        }
-        return true;
-    }
-
-    private void AddStateToTabuList(int[] genes, List<int[]> tabuList, int tenure)
-    {
-        // Clonamos el arreglo para que no se modifique por referencia
-        int[] stateCopy = (int[])genes.Clone();
-        tabuList.Add(stateCopy);
-
-        // Si la lista supera la cantidad permitida (tenure), removemos el elemento más antiguo (FIFO)
-        if (tabuList.Count > tenure)
-        {
-            tabuList.RemoveAt(0);
-        }
     }
 
     private void CopySolutionData(TabuSolution source, TabuSolution destination, int totalGenes)

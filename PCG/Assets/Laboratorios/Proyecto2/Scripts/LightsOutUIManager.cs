@@ -87,6 +87,8 @@ public class LightsOutUIManager : MonoBehaviour
         gaScript.tournamentSize = 5;
         gaScript.filterPoolSize = 3;
 
+        tabuScript.tabuTenure = 5;
+        tabuScript.maxTabuIterations = 100;
         tabuScript.clickPenaltyWeight = 50;
     }
 
@@ -195,6 +197,17 @@ public class LightsOutUIManager : MonoBehaviour
         CreateIntInputRow(parametersSubPanel.transform, uiResources, "Tamaño del Pool de Filtro",
             "Cantidad de mejores individuos entre los cuales se elige la élite para desempatar.",
             gaScript.filterPoolSize, 1, (val) => gaScript.filterPoolSize = val);
+
+        CreateSectionHeader(parametersSubPanel.transform, "Búsqueda Local (Tabu Search)");
+
+        CreateIntInputRow(parametersSubPanel.transform, uiResources, "Tabu Tenure",
+            "Cantidad de iteraciones que un movimiento permanece en la lista tabú.",
+            tabuScript.tabuTenure, 1, (val) => tabuScript.tabuTenure = val);
+
+        CreateIntInputRow(parametersSubPanel.transform, uiResources, "Iteraciones Máximas",
+            "Límite máximo de ciclos para la búsqueda local.",
+            tabuScript.maxTabuIterations, 1, (val) => tabuScript.maxTabuIterations = val);
+
     }
 
     #endregion

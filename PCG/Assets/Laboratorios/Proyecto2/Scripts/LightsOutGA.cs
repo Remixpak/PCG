@@ -42,7 +42,7 @@ el loop sigue estos pasos:
 3- se ordena la poblacion de mejor a peor fitness
 4- se guarda al mejor individuo como elite y pasa intacto a la siguiente generacion (elitismo)
 5- se eligen dos padres por torneo (el mejor de N al azar gana)
-6- se cruzan los padres en un punto aleatorio con probabilidad crossoverRate
+6- se cruzan los padres en un punto aleatorio con probabilidad crossoverRate(50/50)
 7- se muta cada gen del hijo con probabilidad mutationRate (invierte 0 por 1 o 1 por 0)
 8- se repite el relleno hasta completar la poblacion de tamaño N
 9- se revisa si alguien apago todas las luces: si si, se corta y se devuelve
@@ -254,14 +254,17 @@ public class LightsOutGA : MonoBehaviour
     }
 
     //metodo de cruce que basicamente corta los genes en una posicion aleatoria y mezcla al padre a con el b
-    private Individual Crossover(Individual parentA, Individual parentB,int totalGenes)
+    // basicamente se revisa cada celda y se tira una moneda (50/50), si sale cara el hijo copia al padre A en esa casilla y si sale cruz copia al padre B para asi
+    //combinar las estrategias de ambos padres para poder apagar las luces del tablero
+    // enfocandolo de esta forma y quitandole el "corte" evitamos que la jugada se rompa ya que con el corte la mitad de arriba con la de abajo rompia las jugadas
+    private Individual Crossover(Individual parentA, Individual parentB, int totalGenes)
     {
         Individual child = new Individual(totalGenes);
-        int crossoverPoint = Random.Range(1, totalGenes-1); // Punto de corte aleatorio entre 1 a 23 (no es 0 ni 24 para que los padres aporten algo)
 
         for (int i = 0; i < totalGenes; i++)
         {
-            if (i < crossoverPoint)
+            // 50% de probabilidad de heredar el gen del padre A o del padre B
+            if (Random.value < 0.5f)
             {
                 child.genes[i] = parentA.genes[i];
             }

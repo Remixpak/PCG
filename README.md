@@ -9,6 +9,13 @@ Este proyecto resuelve el clásico puzzle **Lights Out** utilizando un **Algorit
 
 ---
 
+## Enlaces
+- **Juego Jugable (itch.io):** https://hikidetsu.itch.io/pcg-ligthsout
+
+## Puzzle y Representación Computacional
+Se seleccionó el puzzle **Lights Out**. Computacionalmente, representamos tanto el estado del tablero como las soluciones (individuos) a través de un **arreglo unidimensional de 25 enteros** (simulando la grilla de 5x5). 
+Cada índice representa una celda específica del tablero, donde el valor numérico (0 o 1) indica si se debe efectuar la acción de "clic" en esa posición. Esta representación binaria permite que los algoritmos crucen, muten y evalúen las soluciones de forma directa y matemática. Además, la generación del nivel se hace mediante la técnica **Backward from Goal State**, garantizando siempre tableros con solución.
+
 ## Técnicas de Inteligencia Artificial Utilizadas
 
 1. **Algoritmo Genético (GA) - Exploración Global:**

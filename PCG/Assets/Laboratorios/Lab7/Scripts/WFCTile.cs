@@ -50,13 +50,20 @@ namespace Laboratorios.Lab7.WaveFunctionCollapse
          * La direccion indica donde se ubica B respecto de A.
          */
 
+
+        //comparamos las caras opuestas de dos piezas relativas a su posicion 
+        //se evalua al vecino en base a la direccion norte , cara sur debe coincidir con la cara norte de la pieza base
+        // ya que esto asegurar continuidad en los bordes
         public bool IsCompatible(WFCTile neighbor, WFCDirection direction)
         {
-            // TODO:
-            // Identificar las conexiones enfrentadas y
-            // determinar si ambas piezas pueden ser vecinas.
-
-            return false;
+            switch (direction)
+            {
+                case WFCDirection.North: return north == neighbor.south;// Compara la cara Norte de esta pieza con la cara Sur de la vecina.
+                case WFCDirection.East: return east == neighbor.west;// Compara la cara Este de esta pieza con la cara Oeste de la vecina.
+                case WFCDirection.South: return south == neighbor.north;// Compara la cara Sur de esta pieza con la cara Norte de la vecina.
+                case WFCDirection.West: return west == neighbor.east;// Compara la cara Oeste de esta pieza con la cara Este de la vecina.
+                default: return false;
+            }
         }
     }
 }

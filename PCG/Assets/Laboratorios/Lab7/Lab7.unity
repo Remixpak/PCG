@@ -937,7 +937,7 @@ MonoBehaviour:
       east: 0
       south: 1
       west: 1
-  activeTileSetIndex: 0
+  activeTileSetIndex: 1
   width: 4
   height: 4
   cellSize: 1

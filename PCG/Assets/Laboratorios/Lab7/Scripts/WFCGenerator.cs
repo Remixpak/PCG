@@ -778,9 +778,9 @@ namespace Laboratorios.Lab7.WaveFunctionCollapse
                     }
                     else
                     {
-                        renderer.sprite = null;
-                        float intensity = (float)domain.Count / ActiveTileSet.Tiles.Count;
-                        renderer.color = new Color(intensity, intensity, intensity, 0.7f);
+                        renderer.sprite = ActiveTileSet.Tiles[0].sprite;// se le asgina el primer psirte del tileset para que se tenga un lienzo
+                        float intensity = (float)domain.Count / ActiveTileSet.Tiles.Count;// se calcula la intensidad donde mientras menos opciones queden mas oscuro se pondra 
+                        renderer.color = new Color(intensity, intensity, intensity, 0.5f);//se pinta el lienzo de gris
                         renderer.gameObject.name = $"Cell_{x}_{y} [{domain.Count} opciones]";
                     }
                 }

@@ -830,5 +830,39 @@ namespace Laboratorios.Lab7.WaveFunctionCollapse
 
             return transform.TransformPoint(position);
         }
+
+        //metodo para poder cambiar de forma manual desde el ui los t iles
+        public void CambiarTileset(int nuevoIndice)
+        {
+            Debug.Log("Cambiando a tileset indice: " + nuevoIndice);
+            activeTileSetIndex = nuevoIndice; //actualizamos el indice del tileset activo
+            Initialize();//inicializamos el tablero
+        }
+
+        //metodo para poder cambiar el tamaño de la grilla en el ui
+        public void CambiarAncho(string nuevoAncho)
+        {
+            if (int.TryParse(nuevoAncho, out int resultado) && resultado > 0)
+            {
+                width = resultado;
+                Initialize();
+            }
+        }
+
+        //metodo para poder cambiar el tamaño de la grilla en el ui
+        public void CambiarAlto(string nuevoAlto)
+        {
+            if (int.TryParse(nuevoAlto, out int resultado) && resultado > 0)
+            {
+                height = resultado;
+                Initialize();
+            }
+        }
+
+        public void botonIniciar()
+        {
+            Initialize();
+        }
+
     }
 }

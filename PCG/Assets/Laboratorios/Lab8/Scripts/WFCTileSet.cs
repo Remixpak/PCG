@@ -201,6 +201,17 @@ namespace Laboratorios.Lab10.WaveFunctionCollapse
              * La matriz devuelta debe tener las dimensiones leidas.
              */
 
+            for (int row = 0; row < height; row++)
+            {
+                // Coincidir orientación vertical con Unity (Y crece hacia arriba)
+                int y = height - 1 - row;
+
+                for (int x = 0; x < width; x++)
+                {
+                    matrix[x, y] = symbols[rows[row][x]]; // Asignar tile desde el diccionario
+                }
+            }
+
             return matrix;
         }
 
@@ -231,6 +242,21 @@ namespace Laboratorios.Lab10.WaveFunctionCollapse
              * - Cada posicion aporta una aparicion a un solo tile.
              * - Global() ya transforma estos conteos a probabilidades.
              */
+
+            for (int x = 0; x < matrix.GetLength(0); x++)
+            {
+                for (int y = 0; y < matrix.GetLength(1); y++)
+                {
+                    frequencies[matrix[x, y]] += 1;
+                }
+            }
+
+            /* Comprobar frecuencias
+            foreach(int frq in frequencies)
+            {
+                Debug.Log(frq.ToString());
+            }
+            */
 
             return frequencies;
         }
@@ -274,6 +300,30 @@ namespace Laboratorios.Lab10.WaveFunctionCollapse
              * que no se observaron en esa muestra.
              */
 
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    int a = matrix[x, y]; // Tile de origen
+
+                    for (int d = 0; d < 8; d++) // Comprobar 8 direcciones
+                    {
+                        int nx = x + Offsets[d].x; // Tomar offsets de la lista
+                        int ny = y + Offsets[d].y;
+
+                        // No se cuentan tiles fuera de la matriz
+                        if (nx < 0 || ny < 0 || nx >= width || ny >= height)
+                        {
+                            continue;
+                        }
+
+                        int b = matrix[nx, ny];
+                        counts[d, a, b]++;      // f(a, b, d)
+                    }
+                }
+            }
+
             return counts;
         }
 
@@ -306,6 +356,30 @@ namespace Laboratorios.Lab10.WaveFunctionCollapse
              * - Contemplar contextos sin observaciones disponibles.
              * - El resultado debe ser util para Cardinal y Moore.
              */
+
+            int count = tiles.Count;
+
+            for (int d = 0; d < 8; d++)
+            {
+                for (int a = 0; a < count; a++)
+                {
+                    int total = 0;  // suma de todas las f(a,k,d)
+                    for (int k = 0; k < count; k++)
+                    {
+                        total += counts[d, a, k];
+                    }
+
+                    if (total == 0)
+                    {
+                        continue;                               
+                    }
+
+                    for (int b = 0; b < count; b++)
+                    {
+                        probabilities[d, a, b] = (double)counts[d, a, b] / total;
+                    }
+                }
+            }
 
             return probabilities;
         }

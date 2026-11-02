@@ -313,6 +313,18 @@ namespace Laboratorios.Lab10.WaveFunctionCollapse
              * - El orden de la pareja y su direccion importan.
              * - Las reglas deben provenir del entrenamiento.
              */
+
+            for (int d = 0; d < Connections; d++)
+            {
+                for (int a = 0; a < count; a++)
+                {
+                    for (int b = 0; b < count; b++)
+                    {
+                        // b puede estar en dirección d de a solo si se observó en el ejemplo.
+                        compatible[d, a, b] = tileSet.Counts[d, a, b] > 0;
+                    }
+                }
+            }
         }
 
         // 3. Observacion
@@ -455,6 +467,38 @@ namespace Laboratorios.Lab10.WaveFunctionCollapse
              * CalculateEntropy() y ChooseWeightedPattern() ya
              * utilizan los valores que devuelve este metodo.
              */
+
+            // Suma de P(candidato | vecino resuelto, dirección) y cantidad de vecinos resueltos.
+            double[] sums = new double[weights.Length];
+            int resolvedNeighbors = 0;
+
+            for (int d = 0; d < Connections; d++)
+            {
+                int nx = x + WFCTileSet.Offsets[d].x;
+                int ny = y + WFCTileSet.Offsets[d].y;
+
+                if (!IsInBounds(nx, ny) || domains[nx, ny].Count != 1)
+                {
+                    continue;                       // fuera del mapa o sin resolver: no aporta contexto
+                }
+
+                int neighborTile = domains[nx, ny][0];
+                int back = WFCTileSet.Opposite(d);  // desde el vecino, esta celda está en la dirección opuesta
+                resolvedNeighbors++;
+
+                foreach (int tile in domains[x, y])
+                {
+                    sums[tile] += tileSet.Weights[back, neighborTile, tile];
+                }
+            }
+
+            if (resolvedNeighbors > 0)
+            {
+                foreach (int tile in domains[x, y])
+                {
+                    weights[tile] = sums[tile] / resolvedNeighbors;   // promedio
+                }
+            }
 
             return weights;
         }
@@ -696,6 +740,39 @@ namespace Laboratorios.Lab10.WaveFunctionCollapse
              * Las estructuras WFCDecision, decisions, CopyDomains()
              * y Collapse() se proporcionan como herramientas.
              */
+
+            while (decisions.Count > 0)
+            {
+                WFCDecision decision = decisions.Peek();
+
+                if (Backtracks >= maxBacktracks)
+                {
+                    Phase = WFCPhase.LimitReached;
+                    Status = $"Limite de {maxBacktracks} retrocesos alcanzado.";
+                    return;
+                }
+
+                // Restaurar los dominios previos a esa decisión (copia: el snapshot queda intacto).
+                domains = CopyDomains(decision.snapshot);
+
+                // Alternativas aún no probadas que sigan teniendo peso positivo en ese estado.
+                double[] weights = GetWeights(decision.cell.x, decision.cell.y);
+                decision.remaining.RemoveAll(t => weights[t] <= 0);
+
+                if (decision.remaining.Count == 0)
+                {
+                    decisions.Pop();    // esta decisión se agotó: retroceder a la anterior
+                    continue;
+                }
+
+                int chosen = ChooseWeightedPattern(decision.remaining, weights);
+                decision.remaining.Remove(chosen);   // no se vuelve a intentar
+
+                Backtracks++;
+                Collapse(decision.cell, chosen);     // colapsa, encola arcos y pasa a Propagating
+                Status = $"Retroceso #{Backtracks}: ({decision.cell.x},{decision.cell.y}) prueba {tileSet.Tiles[chosen].id}.";
+                return;
+            }
 
             Phase = WFCPhase.Failed;
             Status = "Pendiente: implementar Backtrack().";

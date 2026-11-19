@@ -1,0 +1,40 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="RootContainer" style="flex-grow: 1; border-right-width: 0; border-left-color: rgb(0, 0, 0); border-right-color: rgb(0, 0, 0); border-top-color: rgb(0, 0, 0); border-bottom-color: rgb(0, 0, 0); flex-shrink: 1;">
+        <ui:VisualElement name="TopMenuBar" style="flex-grow: 1; height: 24px; max-height: 24px; min-height: 24px; flex-direction: row;">
+            <ui:Label text="Dungeon Studio" style="-unity-text-align: middle-left;"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="MainToolbar" style="flex-grow: 1; height: auto; min-height: auto; max-height: 64px; flex-direction: row; background-color: rgb(40, 40, 40); border-bottom-width: 1px; border-left-color: rgb(0, 0, 0); border-right-color: rgb(0, 0, 0); border-top-color: rgb(0, 0, 0); border-bottom-color: rgb(0, 0, 0);">
+            <ui:VisualElement name="FileGroup" style="flex-grow: 1; flex-direction: row; width: auto; border-right-width: 2px; border-right-color: rgb(70, 70, 70);">
+                <ui:Button text="New file" name="New" style="flex-grow: 1; flex-shrink: 1; white-space: normal; font-size: 12px;"/>
+                <ui:Button text="Load" name="Load" style="flex-grow: 1; flex-shrink: 1; white-space: nowrap; font-size: 12px;"/>
+                <ui:Button text="Save" name="Save" style="flex-grow: 1; flex-shrink: 1; white-space: nowrap; font-size: 12px;"/>
+                <ui:Button text="Save As..." name="SaveAs" style="flex-grow: 1; max-width: none; max-height: none; aspect-ratio: auto; min-width: auto; min-height: auto; flex-shrink: 1; white-space: normal; font-size: 12px;"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="ViewModeGroup" style="flex-grow: initial; flex-direction: row;">
+                <ui:Button text="Preview" name="PreviewToggle" style="min-height: auto; max-height: none; min-width: auto; max-width: none; flex-shrink: 1; flex-grow: 1; -unity-text-auto-size: none; -unity-text-generator: standard; font-size: 12px;"/>
+                <ui:Button text="Locked" name="LockToggle" style="min-height: auto; max-height: none; min-width: auto; max-width: none; flex-shrink: 1; flex-grow: 1; -unity-text-auto-size: best-fit 10px 100px; -unity-text-generator: standard; font-size: 12px;"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="Brushes" style="flex-grow: 1; flex-direction: column;">
+                <ui:VisualElement name="VisualElement" style="flex-grow: 1; flex-direction: row;">
+                    <ui:Button text="Pencil" name="PencilBrush" style="min-height: auto; max-height: none; min-width: auto; max-width: none; flex-grow: 1; flex-shrink: 1; font-size: 12px;"/>
+                    <ui:Button text="Rect" name="RectBrush" style="min-height: auto; max-height: none; min-width: auto; max-width: none; flex-shrink: 1; flex-grow: 1; font-size: 12px;"/>
+                    <ui:Button text="Line" name="LineBrush" style="min-height: auto; max-height: none; min-width: auto; max-width: none; flex-shrink: 1; flex-grow: 1; font-size: 12px;"/>
+                    <ui:VisualElement style="flex-grow: 1;">
+                        <ui:SliderInt label="" value="22" high-value="100" style="width: auto; min-height: auto; flex-shrink: 1; flex-grow: 1; min-width: 80px;"/>
+                        <ui:Label text="Size" style="flex-shrink: 1; -unity-text-align: middle-center; font-size: 11px; margin-top: 0; margin-bottom: 0; flex-grow: 0; color: rgb(188, 188, 188);"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:Label text="Brushes" style="flex-shrink: 1; -unity-text-align: middle-center; font-size: 11px; margin-top: 0; margin-bottom: 0; flex-grow: 1; color: rgb(188, 188, 188);"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="WorkspaceArea" style="flex-grow: 1; flex-direction: row;">
+            <ui:VisualElement name="LeftPalettePanel" style="flex-grow: 0; width: 100px; flex-shrink: 1; background-color: rgb(31, 31, 31);">
+                <ui:ScrollView>
+                    <ui:Button text="Button"/>
+                </ui:ScrollView>
+            </ui:VisualElement>
+            <ui:VisualElement name="CenterCanvasContainer" style="flex-grow: 1; background-color: rgb(17, 17, 17);"/>
+            <ui:VisualElement name="RightProceduralPanel" style="flex-grow: 0; flex-shrink: 0; width: 200px;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
